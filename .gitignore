@@ -32,9 +32,18 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# exception : le template DOIT être versionné (pas de secret dedans)
+!.env.example
+
+# Prisma SQLite local — la base est recréée à chaque déploiement via `prisma migrate`
+prisma/*.db
+prisma/*.db-journal
 
 # vercel
 .vercel
+
+# dossier local perso (jamais poussé — contient notes, clés d'API en clair, etc.)
+/.public/
 
 # typescript
 *.tsbuildinfo
