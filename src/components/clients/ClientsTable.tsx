@@ -4,7 +4,9 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Star, UserMinus, CalendarDays } from "lucide-react";
+import {
+  Star, UserMinus, CalendarDays, Mail, Phone, MapPin, Globe, Briefcase, AtSign,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +28,15 @@ export type ClientRow = {
   prenom: string;
   nom: string;
   entreprise: string | null;
+  email: string | null;
+  phone: string | null;
+  ville: string | null;
+  adresse: string | null;
+  npa: string | null;
+  canton: string | null;
+  siteWeb: string | null;
+  linkedin: string | null;
+  instagram: string | null;
   pack: string;
   mrrCHF: number;
   setupCHF: number;
@@ -56,6 +67,8 @@ export function ClientsTable({ rows }: { rows: ClientRow[] }) {
         <thead>
           <tr className="border-b border-border bg-muted/40 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <th className="py-2 pr-3 font-medium">Client</th>
+            <th className="py-2 pr-3 font-medium">Contact</th>
+            <th className="py-2 pr-3 font-medium">Adresse</th>
             <th className="py-2 pr-3 font-medium">Pack</th>
             <th className="py-2 pr-3 font-medium">MRR</th>
             <th className="py-2 pr-3 font-medium">Setup</th>
@@ -135,7 +148,7 @@ function ClientRowView({ row }: { row: ClientRow }) {
         row.statut === "Churné" ? "opacity-60" : ""
       }`}
     >
-      <td className="py-3 pr-3">
+      <td className="py-3 pr-3 align-top">
         <Link
           href={`/prospects/${row.prospectId}`}
           className="font-medium text-foreground hover:text-[color:var(--color-klaivia-orange)]"
@@ -145,8 +158,95 @@ function ClientRowView({ row }: { row: ClientRow }) {
         {row.entreprise && (
           <div className="text-xs text-muted-foreground">{row.entreprise}</div>
         )}
+        {(row.siteWeb || row.linkedin || row.instagram) && (
+          <div className="mt-1 flex items-center gap-1.5">
+            {row.siteWeb && (
+              <a
+                href={row.siteWeb.startsWith("http") ? row.siteWeb : `https://${row.siteWeb}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                title={row.siteWeb}
+                className="text-muted-foreground transition-colors hover:text-[color:var(--color-klaivia-violet)]"
+              >
+                <Globe className="size-3.5" />
+              </a>
+            )}
+            {row.linkedin && (
+              <a
+                href={row.linkedin.startsWith("http") ? row.linkedin : `https://www.linkedin.com/in/${row.linkedin.replace(/^\/?/, "")}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                title={`LinkedIn : ${row.linkedin}`}
+                className="text-muted-foreground transition-colors hover:text-[#0A66C2]"
+              >
+                <Briefcase className="size-3.5" />
+              </a>
+            )}
+            {row.instagram && (
+              <a
+                href={row.instagram.startsWith("http") ? row.instagram : `https://www.instagram.com/${row.instagram.replace(/^@/, "")}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                title={`Instagram : ${row.instagram}`}
+                className="text-muted-foreground transition-colors hover:text-[#E4405F]"
+              >
+                <AtSign className="size-3.5" />
+              </a>
+            )}
+          </div>
+        )}
       </td>
-      <td className="py-3 pr-3">
+      <td className="py-3 pr-3 align-top">
+        {(row.email || row.phone) ? (
+          <div className="flex flex-col gap-0.5 text-xs">
+            {row.email && (
+              <a
+                href={`mailto:${row.email}`}
+                className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-[color:var(--color-klaivia-violet)]"
+                title={row.email}
+              >
+                <Mail className="size-3 shrink-0" />
+                <span className="max-w-[160px] truncate">{row.email}</span>
+              </a>
+            )}
+            {row.phone && (
+              <a
+                href={`tel:${row.phone.replace(/\s/g, "")}`}
+                className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-[color:var(--color-klaivia-violet)]"
+                title={row.phone}
+              >
+                <Phone className="size-3 shrink-0" />
+                <span>{row.phone}</span>
+              </a>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground/50">—</span>
+        )}
+      </td>
+      <td className="py-3 pr-3 align-top">
+        {(row.adresse || row.ville || row.npa || row.canton) ? (
+          <div className="flex items-start gap-1 text-xs text-muted-foreground">
+            <MapPin className="mt-0.5 size-3 shrink-0" />
+            <div className="flex flex-col">
+              {row.adresse && <span>{row.adresse}</span>}
+              {(row.npa || row.ville) && (
+                <span>
+                  {row.npa && `${row.npa} `}
+                  {row.ville}
+                  {row.canton && ` (${row.canton})`}
+                </span>
+              )}
+              {!row.adresse && !row.npa && !row.ville && row.canton && (
+                <span>{row.canton}</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground/50">—</span>
+        )}
+      </td>
+      <td className="py-3 pr-3 align-top">
         <span className="rounded-md border border-[color:var(--color-klaivia-orange)]/30 bg-[color:var(--color-klaivia-orange-pale)] px-2 py-0.5 text-xs font-medium text-[color:var(--color-klaivia-orange)]">
           {row.pack}
         </span>

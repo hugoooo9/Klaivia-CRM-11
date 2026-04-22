@@ -1,8 +1,9 @@
 // Topbar — barre de recherche centrale + actions à droite (notifications, CTA)
 "use client";
 
-import { Bell, HelpCircle, Plus, Search } from "lucide-react";
+import { HelpCircle, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationsBell } from "@/components/layout/NotificationsBell";
 
 type Props = {
   title: string;
@@ -47,14 +48,7 @@ export function Topbar({ title, subtitle, onNewProspect, onSearch }: Props) {
           <HelpCircle className="size-4" />
         </button>
 
-        <button
-          type="button"
-          className="relative hidden size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex"
-          title="Notifications"
-        >
-          <Bell className="size-4" />
-          <span className="absolute right-2 top-2 size-1.5 rounded-full bg-[color:var(--color-klaivia-orange)]" />
-        </button>
+        <NotificationsBell />
 
         {onNewProspect && (
           <Button
@@ -65,14 +59,6 @@ export function Topbar({ title, subtitle, onNewProspect, onSearch }: Props) {
             Nouveau prospect
           </Button>
         )}
-
-        {/* Avatar */}
-        <div
-          className="ml-1 flex size-9 items-center justify-center rounded-full bg-[color:var(--color-klaivia-navy)] text-sm font-semibold text-white"
-          title="Compte"
-        >
-          EB
-        </div>
       </div>
     </header>
   );

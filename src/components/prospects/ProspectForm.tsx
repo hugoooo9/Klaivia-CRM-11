@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { prospectSchema, type ProspectInput } from "@/lib/validations";
 import {
-  STATUTS_PROSPECT, URGENCES, PACKS,
+  STATUTS_PROSPECT, URGENCES, PACKS, URGENCE_DOT, type Urgence,
 } from "@/lib/constants";
 import { createProspect, updateProspect } from "@/actions/prospects";
 
@@ -173,9 +173,25 @@ export function ProspectForm({ open, onOpenChange, initial }: Props) {
             <div>
               <Label>Urgence</Label>
               <Select value={form.watch("urgence")} onValueChange={(v) => v && form.setValue("urgence", v as ProspectInput["urgence"])}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mt-1">
+                  <SelectValue>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className={`inline-block size-2.5 rounded-full ${URGENCE_DOT[form.watch("urgence") as Urgence]}`}
+                      />
+                      {form.watch("urgence")}
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
-                  {URGENCES.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                  {URGENCES.map((u) => (
+                    <SelectItem key={u} value={u}>
+                      <span className="flex items-center gap-2">
+                        <span className={`inline-block size-2.5 rounded-full ${URGENCE_DOT[u]}`} />
+                        {u}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
