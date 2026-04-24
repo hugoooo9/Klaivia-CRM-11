@@ -1,7 +1,7 @@
 // Topbar — barre de recherche centrale + actions à droite (notifications, CTA)
 "use client";
 
-import { HelpCircle, Plus, Search } from "lucide-react";
+import { HelpCircle, LogOut, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/layout/NotificationsBell";
 
@@ -49,6 +49,16 @@ export function Topbar({ title, subtitle, onNewProspect, onSearch }: Props) {
         </button>
 
         <NotificationsBell />
+
+        <form action="/api/auth/logout" method="post">
+          <button
+            type="submit"
+            className="hidden size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex"
+            title="Se déconnecter"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </form>
 
         {onNewProspect && (
           <Button

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +7,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { SearchProvider } from "@/components/layout/SearchProvider";
 import { getGlobalStats } from "@/lib/stats";
 import { db } from "@/lib/db";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -29,6 +31,24 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Vérif session avant tout fetch DB — /login s'affiche sans sidebar ni DB
+  const jar = await cookies();
+  const isAuthed = verifySessionToken(jar.get(SESSION_COOKIE)?.value);
+
+  if (!isAuthed) {
+    return (
+      <html
+        lang="fr"
+        className={`${dmSans.variable} ${dmSerif.variable} h-full antialiased`}
+      >
+        <body className="min-h-full bg-background text-foreground">
+          {children}
+          <Toaster theme="light" position="bottom-right" richColors closeButton />
+        </body>
+      </html>
+    );
+  }
+
   // Stats pour la sidebar (MRR, taux de conversion) — lues en Server Component
   const [stats, prospectsForSearch, clientsForSearch] = await Promise.all([
     getGlobalStats(),
