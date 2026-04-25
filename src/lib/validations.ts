@@ -9,9 +9,9 @@ import {
 } from "./constants";
 
 export const prospectSchema = z.object({
-  prenom: z.string().min(1, "Prénom requis").max(80),
-  nom: z.string().min(1, "Nom requis").max(80),
-  entreprise: z.string().max(120).optional().or(z.literal("")),
+  prenom: z.string().max(80).optional().or(z.literal("")),
+  nom: z.string().max(80).optional().or(z.literal("")),
+  entreprise: z.string().min(1, "Entreprise requise").max(120),
   ville: z.string().max(80).optional().or(z.literal("")),
   email: z.string().email("Email invalide").optional().or(z.literal("")),
   phone: z.string().max(40).optional().or(z.literal("")),

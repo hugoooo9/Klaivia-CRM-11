@@ -95,22 +95,25 @@ export function ProspectForm({ open, onOpenChange, initial }: Props) {
           {/* Identité */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="prenom">Prénom *</Label>
+              <Label htmlFor="entreprise">Entreprise *</Label>
+              <Input id="entreprise" {...form.register("entreprise")} className="mt-1" />
+              {form.formState.errors.entreprise && (
+                <p className="mt-1 text-xs text-destructive">{form.formState.errors.entreprise.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="prenom">Prénom</Label>
               <Input id="prenom" {...form.register("prenom")} className="mt-1" />
               {form.formState.errors.prenom && (
                 <p className="mt-1 text-xs text-destructive">{form.formState.errors.prenom.message}</p>
               )}
             </div>
             <div>
-              <Label htmlFor="nom">Nom *</Label>
+              <Label htmlFor="nom">Nom</Label>
               <Input id="nom" {...form.register("nom")} className="mt-1" />
               {form.formState.errors.nom && (
                 <p className="mt-1 text-xs text-destructive">{form.formState.errors.nom.message}</p>
               )}
-            </div>
-            <div>
-              <Label htmlFor="entreprise">Entreprise</Label>
-              <Input id="entreprise" {...form.register("entreprise")} className="mt-1" />
             </div>
             <div>
               <Label htmlFor="ville">Ville</Label>

@@ -9,9 +9,9 @@ import { STATUTS_PROSPECT, type StatutProspect } from "@/lib/constants";
 // Helper : reconstruit les dates à partir de strings
 function buildData(input: ProspectInput) {
   return {
-    prenom: input.prenom,
-    nom: input.nom,
-    entreprise: input.entreprise || null,
+    prenom: input.prenom || "—",
+    nom: input.nom || "—",
+    entreprise: input.entreprise,
     ville: input.ville || null,
     email: input.email || null,
     phone: input.phone || null,
