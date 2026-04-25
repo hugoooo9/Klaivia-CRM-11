@@ -71,16 +71,77 @@ function buildFromRow(row: Record<string, unknown>, headerMap: (string | null)[]
   return out;
 }
 
-// Parse CSV / XLSX via SheetJS
+// Parse CSV / XLSX via SheetJS — détecte la row d'en-tête dynamiquement
+// (tolère lignes vides ou titres avant la vraie ligne d'en-têtes).
 async function parseSpreadsheet(buf: Buffer): Promise<PartialProspect[]> {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(buf, { type: "buffer" });
   const firstSheet = wb.Sheets[wb.SheetNames[0]];
-  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: "" });
-  if (json.length === 0) return [];
-  const headers = Object.keys(json[0]);
+
+  // Mode array-of-arrays pour scanner et trouver la vraie row d'en-tête
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(firstSheet, {
+    header: 1,
+    defval: "",
+    blankrows: false,
+  });
+  if (aoa.length === 0) return [];
+
+  // Cherche la première row qui contient au moins UNE colonne reconnue
+  let headerRowIdx = -1;
+  let headers: string[] = [];
+  for (let i = 0; i < Math.min(aoa.length, 10); i++) {
+    const row = aoa[i].map((c) => String(c ?? "").trim());
+    const recognized = row.filter((h) => h && HEADER_MAP[normalizeKey(h)]).length;
+    if (recognized > 0) {
+      headerRowIdx = i;
+      headers = row;
+      break;
+    }
+  }
+
+  // Aucune ligne d'en-tête reconnue → fallback positionnel sur row 0
+  // (ordre : Prénom, Nom, Entreprise, Email, Téléphone, Ville, Secteur, Canal, Statut, Score, Notes)
+  if (headerRowIdx === -1) {
+    const POSITIONAL = [
+      "prenom", "nom", "entreprise", "email", "phone", "ville",
+      "secteur", "canal", "statut", "score", "notes",
+    ];
+    const dataRows = aoa.slice(0); // tout est data
+    return dataRows.map((row) => {
+      const out: PartialProspect = {};
+      POSITIONAL.forEach((key, i) => {
+        const v = row[i];
+        if (v == null || v === "") return;
+        if (key === "score") {
+          const n = Number(v);
+          if (Number.isFinite(n)) out.score = Math.max(1, Math.min(5, Math.round(n)));
+        } else {
+          (out as Record<string, string>)[key] = String(v).trim();
+        }
+      });
+      return out;
+    });
+  }
+
   const headerMap = mapHeaderRow(headers);
-  return json.map((row) => buildFromRow(row, headerMap, headers));
+  const dataRows = aoa.slice(headerRowIdx + 1);
+
+  return dataRows.map((row) => {
+    const out: PartialProspect = {};
+    headers.forEach((h, i) => {
+      const key = headerMap[i];
+      if (!key) return;
+      const val = row[i];
+      if (val == null || val === "") return;
+      if (key === "score") {
+        const n = Number(val);
+        if (Number.isFinite(n)) out.score = Math.max(1, Math.min(5, Math.round(n)));
+      } else {
+        (out as Record<string, string>)[key] = String(val).trim();
+      }
+    });
+    return out;
+  });
 }
 
 // Parse DOCX → regex extract emails + phones, 1 prospect par email trouvé
@@ -135,8 +196,9 @@ type ImportResult = { imported: number; skipped: number; errors: string[] };
 async function createProspects(partials: PartialProspect[]): Promise<ImportResult> {
   const result: ImportResult = { imported: 0, skipped: 0, errors: [] };
   for (const p of partials) {
-    // Minimum requis : un nom OU une entreprise (sinon on skip)
-    if (!p.prenom && !p.nom && !p.entreprise && !p.email) {
+    // Skip seulement si la row est complètement vide (aucun champ)
+    const hasAnyData = Object.values(p).some((v) => v !== undefined && v !== null && v !== "");
+    if (!hasAnyData) {
       result.skipped += 1;
       continue;
     }
