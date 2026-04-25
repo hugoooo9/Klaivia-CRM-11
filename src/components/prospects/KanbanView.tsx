@@ -68,7 +68,7 @@ export function KanbanView({ prospects }: { prospects: Prospect[] }) {
     startTransition(async () => {
       try {
         await changeProspectStatut(draggableId, newStatut);
-        toast.success(`${prospect.prenom} ${prospect.nom} → ${newStatut}`);
+        toast.success(`${prospect.entreprise ?? `${prospect.prenom} ${prospect.nom}`} → ${newStatut}`);
       } catch (e: unknown) {
         toast.error(e instanceof Error ? e.message : "Erreur mise à jour");
         // Rollback
@@ -133,13 +133,13 @@ export function KanbanView({ prospects }: { prospects: Prospect[] }) {
                                 href={`/prospects/${p.id}`}
                                 className="font-semibold text-foreground hover:text-[color:var(--color-klaivia-orange)]"
                               >
-                                {p.prenom} {p.nom}
+                                {p.entreprise ?? "—"}
                               </Link>
                               <UrgencyDot urgence={p.urgence as Urgence} className="mt-1 shrink-0" />
                             </div>
-                            {p.entreprise && (
+                            {[p.prenom, p.nom].filter((s) => s && s !== "—").join(" ").trim() && (
                               <div className="mb-1.5 truncate text-muted-foreground">
-                                {p.entreprise}
+                                {[p.prenom, p.nom].filter((s) => s && s !== "—").join(" ")}
                               </div>
                             )}
                             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">

@@ -265,15 +265,19 @@ export function ProspectTable({ prospects }: { prospects: Prospect[] }) {
                   <TableCell>
                     <Link href={`/prospects/${p.id}`} className="flex items-center gap-2.5">
                       <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-klaivia-violet-pale)] text-xs font-semibold text-[color:var(--color-klaivia-violet)]">
-                        {p.prenom[0]}{p.nom[0]}
+                        {(p.entreprise?.[0] ?? p.prenom?.[0] ?? "?").toUpperCase()}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-foreground hover:text-[color:var(--color-klaivia-violet)]">
-                          {p.prenom} {p.nom}
+                          {p.entreprise ?? "—"}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {p.entreprise ?? "—"}
-                          {p.ville && ` · ${p.ville}`}
+                          {[
+                            [p.prenom, p.nom].filter((s) => s && s !== "—").join(" ").trim(),
+                            p.ville,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "—"}
                         </span>
                       </div>
                     </Link>
@@ -315,7 +319,7 @@ export function ProspectTable({ prospects }: { prospects: Prospect[] }) {
                         <Eye className="size-4" />
                       </Link>
                       <button
-                        onClick={() => onAdvance(p.id, `${p.prenom} ${p.nom}`)}
+                        onClick={() => onAdvance(p.id, p.entreprise ?? `${p.prenom} ${p.nom}`)}
                         title="Avancer au statut suivant"
                         className="rounded p-1.5 text-muted-foreground hover:bg-[color:var(--color-klaivia-violet-pale)] hover:text-[color:var(--color-klaivia-violet)] disabled:opacity-40"
                         disabled={p.statut === "Signé" || p.statut === "Perdu" || isPending}
