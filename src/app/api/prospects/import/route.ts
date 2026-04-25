@@ -12,17 +12,25 @@ const HEADER_MAP: Record<string, string> = {
   prenom: "prenom", "prénom": "prenom", firstname: "prenom", "first name": "prenom",
   nom: "nom", lastname: "nom", "last name": "nom",
   entreprise: "entreprise", company: "entreprise", société: "entreprise", societe: "entreprise",
-  ville: "ville", city: "ville",
+  "nom entreprise": "entreprise", "nom entreprise / indépendant": "entreprise",
+  "raison sociale": "entreprise", organisation: "entreprise",
+  ville: "ville", city: "ville", localite: "ville", localité: "ville",
+  canton: "canton",
+  npa: "npa", "code postal": "npa", cp: "npa", zip: "npa",
+  adresse: "adresse", address: "adresse", rue: "adresse",
   email: "email", mail: "email", "e-mail": "email", courriel: "email",
   phone: "phone", "téléphone": "phone", telephone: "phone", tel: "phone", mobile: "phone",
   instagram: "instagram", insta: "instagram",
   linkedin: "linkedin",
+  "site web": "siteWeb", siteweb: "siteWeb", website: "siteWeb", site: "siteWeb", url: "siteWeb",
   secteur: "secteur", industry: "secteur",
+  "secteur d'activite": "secteur", "secteur d'activité": "secteur",
+  "type d'activite": "secteur", "type d'activité": "secteur", activite: "secteur", activité: "secteur",
   canal: "canal", channel: "canal", source: "canal",
   statut: "statut", status: "statut", "étape": "statut",
   urgence: "urgence", priority: "urgence", priorité: "urgence",
-  score: "score",
-  notes: "notes", remarques: "notes", commentaires: "notes",
+  score: "score", "score global": "score", "score klaivia": "score", "score global klaivia": "score",
+  notes: "notes", remarques: "notes", commentaires: "notes", justification: "notes",
 };
 
 function normalizeKey(s: string): string {
@@ -30,11 +38,19 @@ function normalizeKey(s: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+    .replace(/\(.*?\)/g, " ") // strip parenth\u00e8ses (ex: "Score (/10)" \u2192 "score")
+    .replace(/[^a-z0-9]+/g, " ") // remplace tout non-alphanum par espace
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
+// Pr\u00e9-normalise toutes les cl\u00e9s du HEADER_MAP au boot pour comparaison directe
+const NORMALIZED_HEADER_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(HEADER_MAP).map(([k, v]) => [normalizeKey(k), v]),
+);
+
 function mapHeaderRow(headers: string[]): (string | null)[] {
-  return headers.map((h) => HEADER_MAP[normalizeKey(h)] ?? null);
+  return headers.map((h) => NORMALIZED_HEADER_MAP[normalizeKey(h)] ?? null);
 }
 
 type PartialProspect = {
@@ -42,10 +58,14 @@ type PartialProspect = {
   nom?: string;
   entreprise?: string;
   ville?: string;
+  canton?: string;
+  npa?: string;
+  adresse?: string;
   email?: string;
   phone?: string;
   instagram?: string;
   linkedin?: string;
+  siteWeb?: string;
   secteur?: string;
   canal?: string;
   statut?: string;
@@ -91,7 +111,7 @@ async function parseSpreadsheet(buf: Buffer): Promise<PartialProspect[]> {
   let headers: string[] = [];
   for (let i = 0; i < Math.min(aoa.length, 10); i++) {
     const row = aoa[i].map((c) => String(c ?? "").trim());
-    const recognized = row.filter((h) => h && HEADER_MAP[normalizeKey(h)]).length;
+    const recognized = row.filter((h) => h && NORMALIZED_HEADER_MAP[normalizeKey(h)]).length;
     if (recognized > 0) {
       headerRowIdx = i;
       headers = row;
@@ -209,10 +229,14 @@ async function createProspects(partials: PartialProspect[]): Promise<ImportResul
           nom: p.nom || "—",
           entreprise: p.entreprise || null,
           ville: p.ville || null,
+          canton: p.canton || null,
+          npa: p.npa || null,
+          adresse: p.adresse || null,
           email: p.email || null,
           phone: p.phone || null,
           instagram: p.instagram || null,
           linkedin: p.linkedin || null,
+          siteWeb: p.siteWeb || null,
           secteur: p.secteur || "",
           canal: p.canal || "",
           statut: p.statut || "Nouveau",
