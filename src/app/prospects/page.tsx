@@ -79,17 +79,17 @@ export default async function ProspectsPage({
 
   const forecastCards = [
     {
-      label: "Valeur pipeline",
-      value: fmtCHF(pipelineValue),
-      hint: `${activePipeline.length} prospects actifs`,
+      label: "Bénéfice/mois espéré",
+      value: fmtCHF(weightedForecast),
+      hint: `${activePipeline.length} prospects actifs · pondéré`,
       icon: Target,
       iconBg: "bg-[color:var(--color-klaivia-violet-pale)]",
       iconColor: "text-[color:var(--color-klaivia-violet)]",
     },
     {
-      label: "Forecast pondéré",
-      value: fmtCHF(weightedForecast),
-      hint: "MRR attendu (valeur × proba)",
+      label: "Valeur pipeline max",
+      value: fmtCHF(pipelineValue),
+      hint: "Si tous signent",
       icon: TrendingUp,
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600",
