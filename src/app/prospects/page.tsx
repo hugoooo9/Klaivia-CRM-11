@@ -73,11 +73,10 @@ export default async function ProspectsPage({
     const prob = STATUT_PROBABILITY[p.statut as StatutProspect] ?? 0;
     return sum + mrrFor(p) * prob;
   }, 0);
-  // Bénéfice annuel espéré = Σ proba × (setup one-shot + MRR × 12)
+  // Revenu annuel potentiel (non pondéré) = Σ (setup + MRR × 12) si tous signent
   const annualForecast = activePipeline.reduce((sum, p) => {
-    const prob = STATUT_PROBABILITY[p.statut as StatutProspect] ?? 0;
     const setup = p.setupEstime ?? 0;
-    return sum + prob * (setup + mrrFor(p) * 12);
+    return sum + (setup + mrrFor(p) * 12);
   }, 0);
   const hotCount = prospects.filter(
     (p) => p.statut === "Négociation" || p.statut === "Démo planifiée"
@@ -94,9 +93,9 @@ export default async function ProspectsPage({
       iconColor: "text-[color:var(--color-klaivia-violet)]",
     },
     {
-      label: "Bénéfice/an espéré",
+      label: "Revenu/an si tous signent",
       value: fmtCHF(annualForecast),
-      hint: "Setup saisi + MRR×12, pondéré",
+      hint: "Σ (setup + MRR × 12)",
       icon: TrendingUp,
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600",
