@@ -13,8 +13,10 @@ const HEADER_MAP: Record<string, string> = {
   nom: "nom", lastname: "nom", "last name": "nom",
   entreprise: "entreprise", company: "entreprise", société: "entreprise", societe: "entreprise",
   "nom entreprise": "entreprise", "nom entreprise / indépendant": "entreprise",
+  "nom de l'entreprise": "entreprise", "nom de la société": "entreprise",
   "raison sociale": "entreprise", organisation: "entreprise",
   ville: "ville", city: "ville", localite: "ville", localité: "ville",
+  "npa / ville": "npaVille", "npa ville": "npaVille", "code postal / ville": "npaVille",
   canton: "canton",
   npa: "npa", "code postal": "npa", cp: "npa", zip: "npa",
   adresse: "adresse", address: "adresse", rue: "adresse",
@@ -22,15 +24,23 @@ const HEADER_MAP: Record<string, string> = {
   phone: "phone", "téléphone": "phone", telephone: "phone", tel: "phone", mobile: "phone",
   instagram: "instagram", insta: "instagram",
   linkedin: "linkedin",
+  "réseaux sociaux": "reseaux", "reseaux sociaux": "reseaux", reseaux: "reseaux", "social media": "reseaux",
   "site web": "siteWeb", siteweb: "siteWeb", website: "siteWeb", site: "siteWeb", url: "siteWeb",
   secteur: "secteur", industry: "secteur",
   "secteur d'activite": "secteur", "secteur d'activité": "secteur",
   "type d'activite": "secteur", "type d'activité": "secteur", activite: "secteur", activité: "secteur",
+  "type / spécialité": "secteur", "type specialite": "secteur", "type / specialite": "secteur",
+  spécialité: "secteur", specialite: "secteur",
+  "taille estimée": "taille", "taille estimee": "taille", taille: "taille", size: "taille",
   canal: "canal", channel: "canal", source: "canal",
   statut: "statut", status: "statut", "étape": "statut",
-  urgence: "urgence", priority: "urgence", priorité: "urgence",
+  urgence: "urgence", priority: "urgence", priorité: "urgence", priorite: "urgence",
   score: "score", "score global": "score", "score klaivia": "score", "score global klaivia": "score",
+  "score ia": "score", "score ia /5": "score", "score ia 5": "score",
   notes: "notes", remarques: "notes", commentaires: "notes", justification: "notes",
+  "justification du score": "notes",
+  "angle de prospection": "angle", "angle de prospection klaivia": "angle", angle: "angle",
+  "argument de vente": "angle", pitch: "angle",
 };
 
 function normalizeKey(s: string): string {
@@ -72,6 +82,11 @@ type PartialProspect = {
   urgence?: string;
   score?: number;
   notes?: string;
+  // Champs intermédiaires (pas dans le schéma — fusionnés dans notes/instagram/linkedin/etc.)
+  reseaux?: string;
+  taille?: string;
+  angle?: string;
+  npaVille?: string;
 };
 
 function buildFromRow(row: Record<string, unknown>, headerMap: (string | null)[], headers: string[]): PartialProspect {
@@ -96,7 +111,20 @@ function buildFromRow(row: Record<string, unknown>, headerMap: (string | null)[]
 async function parseSpreadsheet(buf: Buffer): Promise<PartialProspect[]> {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(buf, { type: "buffer" });
-  const firstSheet = wb.Sheets[wb.SheetNames[0]];
+
+  // Choisit l'onglet le plus probable : "Prospects" / "Prospect" / "Contacts" en priorité
+  // Sinon fallback sur l'onglet qui contient le plus de headers reconnus, sinon le premier
+  const SHEET_PRIORITY = ["prospects", "prospect", "contacts", "leads", "liste"];
+  let chosenSheetName = wb.SheetNames[0];
+  const lowerNames = wb.SheetNames.map((n) => n.toLowerCase().trim());
+  for (const pref of SHEET_PRIORITY) {
+    const idx = lowerNames.findIndex((n) => n.includes(pref));
+    if (idx !== -1) {
+      chosenSheetName = wb.SheetNames[idx];
+      break;
+    }
+  }
+  const firstSheet = wb.Sheets[chosenSheetName];
 
   // Mode array-of-arrays pour scanner et trouver la vraie row d'en-tête
   const aoa = XLSX.utils.sheet_to_json<unknown[]>(firstSheet, {
@@ -213,9 +241,66 @@ function extractFromText(text: string): PartialProspect[] {
 
 type ImportResult = { imported: number; skipped: number; errors: string[] };
 
+// Normalise les champs intermédiaires :
+// - npaVille "1003 Lausanne" → npa="1003", ville="Lausanne"
+// - reseaux "linkedin.com/in/x" → linkedin ; "@compte" → instagram ; sinon notes
+// - taille / angle → fusionnés dans notes
+// - urgence HOT/WARM/COLD → Haute/Normale/Faible
+function normalizePartial(p: PartialProspect): PartialProspect {
+  const out: PartialProspect = { ...p };
+
+  // Split NPA / Ville
+  if (out.npaVille && !out.ville && !out.npa) {
+    const m = out.npaVille.match(/^\s*(\d{4,5})\s+(.+)$/);
+    if (m) {
+      out.npa = m[1];
+      out.ville = m[2].trim();
+    } else {
+      out.ville = out.npaVille;
+    }
+  }
+  delete out.npaVille;
+
+  // Réseaux sociaux → instagram / linkedin / notes
+  if (out.reseaux) {
+    const r = out.reseaux.toLowerCase();
+    if (r.includes("linkedin")) {
+      out.linkedin = out.linkedin || out.reseaux;
+    } else if (r.includes("instagram") || out.reseaux.startsWith("@")) {
+      out.instagram = out.instagram || out.reseaux;
+    } else {
+      // Sinon append aux notes
+      out.notes = [out.notes, `Réseaux : ${out.reseaux}`].filter(Boolean).join("\n");
+    }
+  }
+  delete out.reseaux;
+
+  // Taille + Angle de prospection → notes
+  const extra: string[] = [];
+  if (out.taille) extra.push(`Taille : ${out.taille}`);
+  if (out.angle) extra.push(`Angle : ${out.angle}`);
+  if (extra.length > 0) {
+    out.notes = [out.notes, ...extra].filter(Boolean).join("\n");
+  }
+  delete out.taille;
+  delete out.angle;
+
+  // Urgence : map HOT/WARM/COLD vers Haute/Normale/Faible
+  if (out.urgence) {
+    const u = out.urgence.toUpperCase().trim();
+    if (u === "HOT" || u === "HAUTE" || u === "HIGH") out.urgence = "Haute";
+    else if (u === "COLD" || u === "FAIBLE" || u === "LOW") out.urgence = "Faible";
+    else if (u === "WARM" || u === "NORMALE" || u === "MEDIUM" || u === "NORMAL") out.urgence = "Normale";
+    else out.urgence = "Normale";
+  }
+
+  return out;
+}
+
 async function createProspects(partials: PartialProspect[]): Promise<ImportResult> {
   const result: ImportResult = { imported: 0, skipped: 0, errors: [] };
-  for (const p of partials) {
+  for (const raw of partials) {
+    const p = normalizePartial(raw);
     // Skip seulement si la row est complètement vide (aucun champ)
     const hasAnyData = Object.values(p).some((v) => v !== undefined && v !== null && v !== "");
     if (!hasAnyData) {
@@ -248,7 +333,7 @@ async function createProspects(partials: PartialProspect[]): Promise<ImportResul
       });
       result.imported += 1;
     } catch (e) {
-      result.errors.push(`${p.email ?? p.nom ?? "?"} : ${(e as Error).message}`);
+      result.errors.push(`${p.email ?? p.nom ?? p.entreprise ?? "?"} : ${(e as Error).message}`);
     }
   }
   return result;
