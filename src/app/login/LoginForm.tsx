@@ -43,9 +43,9 @@ export function LoginForm({ from }: { from: string }) {
       <Button
         type="submit"
         disabled={isPending}
-        className="w-full bg-[color:var(--color-klaivia-orange)] text-white hover:bg-[color:var(--color-klaivia-orange-light)]"
+        className="klaivia-btn-primary w-full font-semibold"
       >
-        {isPending ? "…" : "Se connecter"}
+        {isPending ? "Connexion…" : "Se connecter"}
       </Button>
     </form>
   );

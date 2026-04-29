@@ -265,12 +265,18 @@ export function ProspectTable({ prospects }: { prospects: Prospect[] }) {
                     <Checkbox checked={isChecked} onChange={() => toggleOne(p.id)} />
                   </TableCell>
                   <TableCell>
-                    <Link href={`/prospects/${p.id}`} className="flex items-center gap-2.5">
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-klaivia-violet-pale)] text-xs font-semibold text-[color:var(--color-klaivia-violet)]">
+                    <Link href={`/prospects/${p.id}`} className="group flex items-center gap-3">
+                      <div
+                        className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[13px] font-semibold text-white shadow-sm ring-1 ring-inset ring-white/20 transition-transform group-hover:scale-105"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, var(--color-klaivia-violet) 0%, var(--color-klaivia-violet-light) 100%)",
+                        }}
+                      >
                         {(p.entreprise?.[0] ?? p.prenom?.[0] ?? "?").toUpperCase()}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground hover:text-[color:var(--color-klaivia-violet)]">
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-sm font-semibold text-foreground transition-colors group-hover:text-[color:var(--color-klaivia-violet)]">
                           {p.entreprise ?? "—"}
                         </span>
                         <span className="text-xs text-muted-foreground">

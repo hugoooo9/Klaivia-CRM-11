@@ -147,7 +147,7 @@ export function ProspectsClient({ prospects }: { prospects: Prospect[] }) {
   return (
     <div className="space-y-4">
       {/* Onglets vues sauvegardées */}
-      <div className="flex items-center gap-1 border-b border-border">
+      <div className="flex items-center gap-0.5 border-b border-border">
         {SAVED_VIEWS.map((v) => {
           const count = prospects.filter(v.filter).length;
           const active = savedViewId === v.id;
@@ -156,7 +156,7 @@ export function ProspectsClient({ prospects }: { prospects: Prospect[] }) {
               key={v.id}
               type="button"
               onClick={() => setSavedViewId(v.id)}
-              className={`relative px-3 py-2 text-sm font-medium transition-colors ${
+              className={`group relative px-3.5 py-2.5 text-sm font-medium transition-all ${
                 active
                   ? "text-[color:var(--color-klaivia-violet)]"
                   : "text-muted-foreground hover:text-foreground"
@@ -165,18 +165,21 @@ export function ProspectsClient({ prospects }: { prospects: Prospect[] }) {
               <span className="inline-flex items-center gap-1.5">
                 {v.label}
                 <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-colors ${
                     active
                       ? "bg-[color:var(--color-klaivia-violet-pale)] text-[color:var(--color-klaivia-violet)]"
-                      : "bg-muted text-muted-foreground"
+                      : "bg-muted text-muted-foreground group-hover:bg-muted/80"
                   }`}
                 >
                   {count}
                 </span>
               </span>
-              {active && (
-                <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-[color:var(--color-klaivia-violet)]" />
-              )}
+              <span
+                className={`absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-[color:var(--color-klaivia-violet)] transition-transform duration-200 ${
+                  active ? "scale-x-100" : "scale-x-0"
+                }`}
+                style={{ transformOrigin: "center" }}
+              />
             </button>
           );
         })}

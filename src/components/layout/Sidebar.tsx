@@ -56,13 +56,19 @@ export function Sidebar({ mrr, tauxConversion }: Props) {
       aria-label="Navigation principale"
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 border-b border-sidebar-border px-5 py-5">
-        <div className="flex size-9 items-center justify-center rounded-md bg-[color:var(--color-klaivia-orange)]">
-          <Sparkles className="size-5 text-white" />
+      <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
+        <div
+          className="flex size-9 items-center justify-center rounded-lg shadow-[0_4px_12px_rgba(91,63,166,0.35)]"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-klaivia-violet) 0%, var(--color-klaivia-violet-light) 100%)",
+          }}
+        >
+          <Sparkles className="size-[18px] text-white" />
         </div>
         <div className="flex flex-col leading-tight">
           <span className="text-base font-semibold tracking-tight text-white">Klaivia</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">CRM</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">CRM</span>
         </div>
       </div>
 
@@ -82,23 +88,23 @@ export function Sidebar({ mrr, tauxConversion }: Props) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "group relative flex items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium transition-colors",
+                      "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
                       active
-                        ? "bg-white/5 text-white"
-                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                        ? "bg-gradient-to-r from-[color:var(--color-klaivia-violet)]/20 to-transparent text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
+                        : "text-white/65 hover:bg-white/5 hover:text-white"
                     )}
                   >
                     <span
                       className={cn(
-                        "absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-[color:var(--color-klaivia-orange)] transition-opacity",
-                        active ? "opacity-100" : "opacity-0"
+                        "absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-[color:var(--color-klaivia-violet-light)] transition-all",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-30"
                       )}
                       aria-hidden
                     />
                     <Icon
                       className={cn(
-                        "size-4 shrink-0 transition-colors",
-                        active ? "text-[color:var(--color-klaivia-orange)]" : "text-white/70 group-hover:text-white"
+                        "size-[18px] shrink-0 transition-colors",
+                        active ? "text-[color:var(--color-klaivia-violet-light)]" : "text-white/55 group-hover:text-white"
                       )}
                     />
                     <span>{item.label}</span>

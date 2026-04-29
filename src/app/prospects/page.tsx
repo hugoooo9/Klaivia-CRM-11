@@ -133,21 +133,23 @@ export default async function ProspectsPage({
         {prospects.length > 0 && (
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {forecastCards.map(({ label, value, hint, icon: Icon, iconBg, iconColor }) => (
-              <div key={label} className="klaivia-card p-4">
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <div key={label} className="klaivia-card-elevated p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                       {label}
                     </span>
-                    <div className="mt-1.5 text-2xl font-semibold leading-none tracking-tight text-foreground">
+                    <div className="mt-2 text-[26px] font-bold leading-none tracking-tight text-foreground tabular-nums">
                       {value}
                     </div>
+                    <div className="mt-2 text-[11px] leading-tight text-muted-foreground">
+                      {hint}
+                    </div>
                   </div>
-                  <div className={`flex size-8 shrink-0 items-center justify-center rounded-md ${iconBg}`}>
-                    <Icon className={`size-4 ${iconColor}`} />
+                  <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ring-black/5 ${iconBg}`}>
+                    <Icon className={`size-[18px] ${iconColor}`} />
                   </div>
                 </div>
-                <div className="mt-2 text-xs text-muted-foreground">{hint}</div>
               </div>
             ))}
           </div>

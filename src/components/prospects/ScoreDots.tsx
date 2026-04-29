@@ -4,15 +4,17 @@ export function ScoreDots({ score, className }: { score: number; className?: str
   const color =
     score >= 4
       ? "bg-[color:var(--color-klaivia-green)]"
-      : "bg-[color:var(--color-klaivia-violet-light)]";
+      : score >= 3
+        ? "bg-[color:var(--color-klaivia-violet)]"
+        : "bg-[color:var(--color-klaivia-gold)]";
   return (
-    <div className={cn("flex items-center gap-0.5", className)}>
+    <div className={cn("flex items-center gap-1", className)}>
       {Array.from({ length: 5 }).map((_, i) => (
         <span
           key={i}
           className={cn(
-            "size-1.5 rounded-full transition-colors",
-            i < score ? color : "bg-white/10"
+            "h-1.5 w-2 rounded-full transition-all",
+            i < score ? color : "bg-border"
           )}
         />
       ))}

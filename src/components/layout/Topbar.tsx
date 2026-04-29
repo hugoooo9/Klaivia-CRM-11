@@ -14,7 +14,7 @@ type Props = {
 
 export function Topbar({ title, subtitle, onNewProspect, onSearch }: Props) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border bg-card px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border bg-card/95 px-8 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       {/* Titre + sous-titre */}
       <div className="min-w-0">
         <h1 className="truncate text-[22px] font-semibold tracking-tight text-foreground">
@@ -31,11 +31,11 @@ export function Topbar({ title, subtitle, onNewProspect, onSearch }: Props) {
         <button
           type="button"
           onClick={onSearch}
-          className="inline-flex w-full max-w-sm items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-[color:var(--color-klaivia-gray)] hover:text-foreground"
+          className="inline-flex w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground shadow-[inset_0_1px_2px_rgba(46,59,78,0.04)] transition-all hover:border-[color:var(--color-klaivia-violet-light)]/50 hover:bg-card hover:text-foreground hover:shadow-sm"
         >
-          <Search className="size-4" />
+          <Search className="size-4 text-muted-foreground" />
           <span className="flex-1 text-left">Rechercher un contact, un client…</span>
-          <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+          <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground">
             Ctrl K
           </kbd>
         </button>

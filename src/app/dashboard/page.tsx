@@ -70,21 +70,21 @@ export default async function DashboardPage() {
         {/* Ligne de KPIs */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map(({ label, value, hint, icon: Icon, iconBg, iconColor }) => (
-            <div key={label} className="klaivia-card-hover p-5">
-              <div className="flex items-start justify-between">
-                <div className="min-w-0">
-                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div key={label} className="klaivia-card-elevated p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     {label}
                   </span>
-                  <div className="mt-2 text-[28px] font-semibold leading-none tracking-tight text-foreground">
+                  <div className="mt-2 text-[28px] font-bold leading-none tracking-tight text-foreground tabular-nums">
                     {value}
                   </div>
+                  <div className="mt-2 text-[11px] leading-tight text-muted-foreground">{hint}</div>
                 </div>
-                <div className={`flex size-9 shrink-0 items-center justify-center rounded-md ${iconBg}`}>
-                  <Icon className={`size-4 ${iconColor}`} />
+                <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ring-black/5 ${iconBg}`}>
+                  <Icon className={`size-[18px] ${iconColor}`} />
                 </div>
               </div>
-              <div className="mt-3 text-xs text-muted-foreground">{hint}</div>
             </div>
           ))}
         </div>
