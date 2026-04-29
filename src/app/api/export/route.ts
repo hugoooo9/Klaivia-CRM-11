@@ -63,6 +63,7 @@ async function fetchRows(type: ExportType): Promise<Record<string, unknown>[]> {
       score: p.score,
       packInteret: p.packInteret,
       budgetEstime: p.budgetEstime,
+      setupEstime: p.setupEstime,
       dateContact: p.dateContact.toISOString(),
       prochainStep: p.prochainStep?.toISOString() ?? "",
       notes: p.notes,

@@ -25,6 +25,7 @@ function buildData(input: ProspectInput) {
     prochainStep: input.prochainStep ? new Date(input.prochainStep) : null,
     packInteret: input.packInteret || null,
     budgetEstime: input.budgetEstime ?? null,
+    setupEstime: input.setupEstime ?? null,
     notes: input.notes || null,
     raisonPerte: input.raisonPerte || null,
   };

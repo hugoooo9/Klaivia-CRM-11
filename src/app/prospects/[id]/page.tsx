@@ -51,6 +51,7 @@ export default async function ProspectDetailPage({
       : "",
     packInteret: prospect.packInteret ?? "",
     budgetEstime: prospect.budgetEstime ?? undefined,
+    setupEstime: prospect.setupEstime ?? undefined,
     notes: prospect.notes ?? "",
     raisonPerte: prospect.raisonPerte ?? "",
   };
@@ -135,7 +136,8 @@ export default async function ProspectDetailPage({
               <Row label="Secteur" value={prospect.secteur} />
               <Row label="Canal" value={prospect.canal} />
               <Row label="Pack d'intérêt" value={prospect.packInteret ?? "—"} />
-              <Row label="Budget estimé" value={fmtCHF(prospect.budgetEstime)} />
+              <Row label="Budget mensuel" value={fmtCHF(prospect.budgetEstime)} />
+              <Row label="Setup one-shot" value={fmtCHF(prospect.setupEstime)} />
               <Row label="Prochain step" value={prospect.prochainStep ? fmtDate(prospect.prochainStep) : "—"} />
               {prospect.raisonPerte && (
                 <div className="mt-2 rounded border border-[color:var(--color-klaivia-red)]/30 bg-destructive/10 p-2 text-xs">

@@ -53,6 +53,7 @@ export function ProspectForm({ open, onOpenChange, initial }: Props) {
       prochainStep: initial?.prochainStep ?? "",
       packInteret: initial?.packInteret ?? "",
       budgetEstime: initial?.budgetEstime,
+      setupEstime: initial?.setupEstime,
       notes: initial?.notes ?? "",
       raisonPerte: initial?.raisonPerte ?? "",
     },
@@ -201,7 +202,7 @@ export function ProspectForm({ open, onOpenChange, initial }: Props) {
           </div>
 
           {/* Commercial */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>
               <Label htmlFor="score">Score (1-5)</Label>
               <Input
@@ -224,10 +225,18 @@ export function ProspectForm({ open, onOpenChange, initial }: Props) {
               </Select>
             </div>
             <div>
-              <Label htmlFor="budgetEstime">Budget estimé (CHF/mois)</Label>
+              <Label htmlFor="budgetEstime">Budget mensuel (CHF)</Label>
               <Input
                 id="budgetEstime" type="number" min={0}
                 {...form.register("budgetEstime", { valueAsNumber: true, setValueAs: (v) => (v === "" || Number.isNaN(v) ? undefined : Number(v)) })}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="setupEstime">Setup one-shot (CHF)</Label>
+              <Input
+                id="setupEstime" type="number" min={0}
+                {...form.register("setupEstime", { valueAsNumber: true, setValueAs: (v) => (v === "" || Number.isNaN(v) ? undefined : Number(v)) })}
                 className="mt-1"
               />
             </div>

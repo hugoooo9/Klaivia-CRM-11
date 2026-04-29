@@ -54,6 +54,14 @@ export const PACK_MRR: Record<Pack, number> = {
   "Custom": 5900,
 };
 
+// Frais setup one-shot (création site / agent / automatisation) par pack — CHF
+export const PACK_SETUP: Record<Pack, number> = {
+  "Starter IA": 800,
+  "Growth IA": 1500,
+  "Scale IA": 3500,
+  "Custom": 6000,
+};
+
 // Cas d'usage principaux que Klaivia automatise pour ses clients
 export const USE_CASES = [
   "Prospection outbound",

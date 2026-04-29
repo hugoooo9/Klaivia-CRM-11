@@ -40,6 +40,8 @@ type Prospect = {
   score: number;
   prochainStep: Date | null;
   packInteret: string | null;
+  budgetEstime: number | null;
+  setupEstime: number | null;
   notes: string | null;
 };
 

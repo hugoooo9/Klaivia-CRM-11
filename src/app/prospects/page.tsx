@@ -54,23 +54,30 @@ export default async function ProspectsPage({
     select: {
       id: true, prenom: true, nom: true, entreprise: true, ville: true,
       secteur: true, canal: true, statut: true, urgence: true, score: true,
-      prochainStep: true, packInteret: true, notes: true,
+      prochainStep: true, packInteret: true, budgetEstime: true, setupEstime: true, notes: true,
     },
   });
 
-  // ---- Forecast pondéré : Σ (packMRR × probabilité du statut) sur prospects actifs
+  // ---- Forecast pondéré : Σ (MRR × probabilité du statut) sur prospects actifs
+  // MRR par prospect = budgetEstime saisi (>0) sinon PACK_MRR du pack d'intérêt
+  // Setup par prospect = setupEstime saisi (sinon 0 — variable selon scope client)
   const activePipeline = prospects.filter(
     (p) => p.statut !== "Signé" && p.statut !== "Perdu"
   );
+  const mrrFor = (p: (typeof prospects)[number]): number => {
+    if (p.budgetEstime && p.budgetEstime > 0) return p.budgetEstime;
+    const pack = (p.packInteret ?? "Growth IA") as Pack;
+    return PACK_MRR[pack] ?? PACK_MRR["Growth IA"];
+  };
   const weightedForecast = activePipeline.reduce((sum, p) => {
-    const pack = (p.packInteret ?? "Growth IA") as Pack;
-    const baseMrr = PACK_MRR[pack] ?? PACK_MRR["Growth IA"];
     const prob = STATUT_PROBABILITY[p.statut as StatutProspect] ?? 0;
-    return sum + baseMrr * prob;
+    return sum + mrrFor(p) * prob;
   }, 0);
-  const pipelineValue = activePipeline.reduce((sum, p) => {
-    const pack = (p.packInteret ?? "Growth IA") as Pack;
-    return sum + (PACK_MRR[pack] ?? PACK_MRR["Growth IA"]);
+  // Bénéfice annuel espéré = Σ proba × (setup one-shot + MRR × 12)
+  const annualForecast = activePipeline.reduce((sum, p) => {
+    const prob = STATUT_PROBABILITY[p.statut as StatutProspect] ?? 0;
+    const setup = p.setupEstime ?? 0;
+    return sum + prob * (setup + mrrFor(p) * 12);
   }, 0);
   const hotCount = prospects.filter(
     (p) => p.statut === "Négociation" || p.statut === "Démo planifiée"
@@ -87,9 +94,9 @@ export default async function ProspectsPage({
       iconColor: "text-[color:var(--color-klaivia-violet)]",
     },
     {
-      label: "Valeur pipeline max",
-      value: fmtCHF(pipelineValue),
-      hint: "Si tous signent",
+      label: "Bénéfice/an espéré",
+      value: fmtCHF(annualForecast),
+      hint: "Setup saisi + MRR×12, pondéré",
       icon: TrendingUp,
       iconBg: "bg-emerald-50",
       iconColor: "text-emerald-600",

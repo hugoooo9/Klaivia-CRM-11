@@ -39,6 +39,7 @@ model Prospect {
   prochainStep  DateTime?
   packInteret   String?  // Essentiel | Pro | Premium
   budgetEstime  Int?     // CHF/mois
+  setupEstime   Int?     // Setup one-shot CHF
 
   // Notes et historique
   notes         String?

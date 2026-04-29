@@ -28,14 +28,17 @@ type Prospect = {
   score: number;
   prochainStep: Date | null;
   packInteret: string | null;
+  budgetEstime: number | null;
+  setupEstime: number | null;
 };
 
-// Valeur pondérée d'un prospect = MRR du pack × proba du statut
+// Valeur pondérée d'un prospect = MRR (budget saisi ou pack) × proba du statut
 function weightedValue(p: Prospect): number {
-  const pack = (p.packInteret ?? "Growth IA") as Pack;
-  const baseMrr = PACK_MRR[pack] ?? PACK_MRR["Growth IA"];
+  const mrr = p.budgetEstime && p.budgetEstime > 0
+    ? p.budgetEstime
+    : (PACK_MRR[(p.packInteret ?? "Growth IA") as Pack] ?? PACK_MRR["Growth IA"]);
   const prob = STATUT_PROBABILITY[p.statut as StatutProspect] ?? 0;
-  return baseMrr * prob;
+  return mrr * prob;
 }
 
 export function KanbanView({ prospects }: { prospects: Prospect[] }) {

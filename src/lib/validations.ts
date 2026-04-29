@@ -25,6 +25,7 @@ export const prospectSchema = z.object({
   prochainStep: z.string().optional().or(z.literal("")), // ISO date
   packInteret: z.enum(PACKS).optional().or(z.literal("")),
   budgetEstime: z.number().int().nonnegative().optional(),
+  setupEstime: z.number().int().nonnegative().optional(),
   notes: z.string().max(5000).optional().or(z.literal("")),
   raisonPerte: z.string().max(500).optional().or(z.literal("")),
 });
