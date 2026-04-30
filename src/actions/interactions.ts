@@ -4,7 +4,6 @@
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { interactionSchema, type InteractionInput } from "@/lib/validations";
-import { NEXT_STEP_BY_TYPE } from "@/lib/constants";
 
 export async function createInteraction(input: InteractionInput) {
   const parsed = interactionSchema.parse(input);
@@ -47,5 +46,3 @@ export async function deleteInteraction(id: string, prospectId: string) {
   await db.interaction.delete({ where: { id } });
   revalidatePath(`/prospects/${prospectId}`);
 }
-
-export { NEXT_STEP_BY_TYPE };
