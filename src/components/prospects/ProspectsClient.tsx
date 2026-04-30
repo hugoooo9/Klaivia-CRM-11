@@ -31,6 +31,7 @@ type Prospect = {
   budgetEstime: number | null;
   setupEstime: number | null;
   notes: string | null;
+  source: string;
 };
 
 // Vues sauvegardées — chaque vue applique un jeu de filtres côté client uniquement
@@ -43,6 +44,16 @@ type SavedView = {
 
 const SAVED_VIEWS: SavedView[] = [
   { id: "all", label: "Tous", filter: () => true },
+  {
+    id: "manuels",
+    label: "Manuels",
+    filter: (p) => p.source === "MANUAL",
+  },
+  {
+    id: "importes",
+    label: "Importés",
+    filter: (p) => p.source === "IMPORT_CSV",
+  },
   {
     id: "hot",
     label: "Chauds",

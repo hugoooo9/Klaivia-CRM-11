@@ -30,6 +30,7 @@ type Prospect = {
   packInteret: string | null;
   budgetEstime: number | null;
   setupEstime: number | null;
+  source?: string;
 };
 
 // Valeur pondérée d'un prospect = MRR (budget saisi ou pack) × proba du statut

@@ -43,6 +43,7 @@ type Prospect = {
   budgetEstime: number | null;
   setupEstime: number | null;
   notes: string | null;
+  source: string;
 };
 
 const COLUMNS: { key: string; label: string; sortable: boolean }[] = [

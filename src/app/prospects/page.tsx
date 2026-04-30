@@ -54,7 +54,8 @@ export default async function ProspectsPage({
     select: {
       id: true, prenom: true, nom: true, entreprise: true, ville: true,
       secteur: true, canal: true, statut: true, urgence: true, score: true,
-      prochainStep: true, packInteret: true, budgetEstime: true, setupEstime: true, notes: true,
+      prochainStep: true, packInteret: true, budgetEstime: true, setupEstime: true,
+      notes: true, source: true,
     },
   });
 
