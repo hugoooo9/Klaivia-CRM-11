@@ -31,9 +31,21 @@ function buildData(input: ProspectInput) {
   };
 }
 
+async function logActivity(prospectId: string, type: string, description: string, meta?: Record<string, unknown>) {
+  await db.activity.create({
+    data: {
+      prospectId,
+      type,
+      description,
+      meta: meta ? JSON.stringify(meta) : null,
+    },
+  });
+}
+
 export async function createProspect(input: ProspectInput) {
   const parsed = prospectSchema.parse(input);
   const p = await db.prospect.create({ data: buildData(parsed) });
+  await logActivity(p.id, "CREATED", `Prospect créé : ${p.entreprise ?? p.prenom + " " + p.nom}`);
   revalidatePath("/prospects");
   revalidatePath("/dashboard");
   return p;
@@ -41,7 +53,14 @@ export async function createProspect(input: ProspectInput) {
 
 export async function updateProspect(id: string, input: ProspectInput) {
   const parsed = prospectSchema.parse(input);
+  const before = await db.prospect.findUnique({ where: { id }, select: { statut: true } });
   const p = await db.prospect.update({ where: { id }, data: buildData(parsed) });
+  if (before && before.statut !== p.statut) {
+    await logActivity(id, "STATUT_CHANGE", `${before.statut} → ${p.statut}`, {
+      from: before.statut,
+      to: p.statut,
+    });
+  }
   revalidatePath("/prospects");
   revalidatePath(`/prospects/${id}`);
   revalidatePath("/dashboard");
@@ -73,10 +92,17 @@ export async function advanceProspectStatut(id: string) {
 }
 
 export async function changeProspectStatut(id: string, statut: StatutProspect) {
+  const before = await db.prospect.findUnique({ where: { id }, select: { statut: true } });
   const updated = await db.prospect.update({
     where: { id },
     data: { statut },
   });
+  if (before && before.statut !== statut) {
+    await logActivity(id, "STATUT_CHANGE", `${before.statut} → ${statut}`, {
+      from: before.statut,
+      to: statut,
+    });
+  }
   revalidatePath("/prospects");
   revalidatePath(`/prospects/${id}`);
   revalidatePath("/dashboard");

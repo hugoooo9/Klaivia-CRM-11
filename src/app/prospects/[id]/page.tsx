@@ -1,4 +1,4 @@
-// Fiche prospect détaillée — header + infos + notes + timeline d'interactions
+// Fiche prospect détaillée — header + infos + notes + timeline activités + tasks + tags
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Mail, Phone, AtSign, Globe, MapPin, Building2, Trophy } from "lucide-react";
@@ -7,6 +7,9 @@ import { StatusBadge } from "@/components/prospects/StatusBadge";
 import { UrgencyDot } from "@/components/prospects/UrgencyDot";
 import { ScoreDots } from "@/components/prospects/ScoreDots";
 import { ProspectDetailActions } from "@/components/prospects/ProspectDetailActions";
+import { ProspectTasks } from "@/components/prospects/ProspectTasks";
+import { ProspectTags } from "@/components/prospects/ProspectTags";
+import { ActivityTimeline } from "@/components/prospects/ActivityTimeline";
 import { db } from "@/lib/db";
 import { initials, avatarColor, fmtDate, fmtRelative, fmtCHF } from "@/lib/format";
 import type { StatutProspect, Urgence } from "@/lib/constants";
@@ -23,6 +26,9 @@ export default async function ProspectDetailPage({
     include: {
       interactions: { orderBy: { createdAt: "desc" } },
       client: true,
+      tasks: { orderBy: [{ done: "asc" }, { dueDate: "asc" }] },
+      tags: { include: { tag: true } },
+      activities: { orderBy: { createdAt: "desc" }, take: 30 },
     },
   });
 
@@ -157,34 +163,35 @@ export default async function ProspectDetailPage({
           </div>
         </div>
 
-        {/* Timeline interactions */}
-        <div className="klaivia-card mt-6 p-6">
-          <h3 className="mb-4 text-base font-semibold text-foreground">
-            Historique · {prospect.interactions.length} interaction{prospect.interactions.length > 1 ? "s" : ""}
-          </h3>
+        {/* Tags + Tasks */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <ProspectTags
+            prospectId={prospect.id}
+            assigned={prospect.tags.map((pt) => pt.tag)}
+          />
+          <div className="lg:col-span-2">
+            <ProspectTasks prospectId={prospect.id} tasks={prospect.tasks} />
+          </div>
+        </div>
 
-          {prospect.interactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Aucune interaction enregistrée. Utilise « Ajouter interaction » pour commencer.
-            </p>
-          ) : (
-            <ol className="relative space-y-4 border-l-2 border-border pl-6">
-              {prospect.interactions.map((int) => (
-                <li key={int.id} className="relative">
-                  <span className="absolute -left-[29px] top-1 flex size-4 items-center justify-center rounded-full border-2 border-card bg-[color:var(--color-klaivia-orange)]" />
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-[color:var(--color-klaivia-orange-pale)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-klaivia-orange)]">
-                      {int.type}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {fmtDate(int.createdAt)} · {fmtRelative(int.createdAt)}
-                    </span>
-                  </div>
-                  <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">{int.contenu}</p>
-                </li>
-              ))}
-            </ol>
-          )}
+        {/* Timeline activités + interactions fusionnées */}
+        <div className="mt-6">
+          <ActivityTimeline
+            activities={prospect.activities.map((a) => ({
+              id: a.id,
+              kind: "activity" as const,
+              type: a.type,
+              description: a.description,
+              createdAt: a.createdAt,
+            }))}
+            interactions={prospect.interactions.map((i) => ({
+              id: i.id,
+              kind: "interaction" as const,
+              type: i.type,
+              contenu: i.contenu,
+              createdAt: i.createdAt,
+            }))}
+          />
         </div>
 
         {/* Client associé s'il existe */}

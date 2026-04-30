@@ -17,6 +17,14 @@ export async function createInteraction(input: InteractionInput) {
     },
   });
 
+  await db.activity.create({
+    data: {
+      prospectId: parsed.prospectId,
+      type: "INTERACTION",
+      description: `${parsed.type} : ${parsed.contenu.slice(0, 80)}${parsed.contenu.length > 80 ? "…" : ""}`,
+    },
+  });
+
   // Met à jour le prochain step sur le prospect si demandé
   if (parsed.nextStepDays != null && parsed.nextStepDays > 0) {
     const nextStep = new Date();

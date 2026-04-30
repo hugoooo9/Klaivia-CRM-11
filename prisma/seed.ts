@@ -9,13 +9,14 @@ const prisma = new PrismaClient();
 async function main() {
   // Wipe complet — on part d'une base vierge, aucun client fictif.
   // Ordre : enfants → parents (respect des FK).
-  await prisma.approachMessage.deleteMany();
-  await prisma.enrichmentLog.deleteMany();
-  await prisma.contact.deleteMany();
+  await prisma.activity.deleteMany();
+  await prisma.task.deleteMany();
+  await prisma.prospectTag.deleteMany();
+  await prisma.tag.deleteMany();
+  await prisma.template.deleteMany();
   await prisma.interaction.deleteMany();
   await prisma.client.deleteMany();
   await prisma.prospect.deleteMany();
-  await prisma.optOut.deleteMany();
   await prisma.kPI.deleteMany();
 
   console.log("Base vidée — aucune donnée fictive.");

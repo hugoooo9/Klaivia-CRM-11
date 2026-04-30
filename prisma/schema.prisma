@@ -1,4 +1,4 @@
-// Klaivia CRM — schéma Prisma
+// Klaivia CRM — schéma Prisma simplifié
 // Base SQLite locale, pas de serveur distant.
 
 generator client {
@@ -21,132 +21,125 @@ model Prospect {
   nom           String
   entreprise    String?
   ville         String?
+  canton        String?
+  npa           String?
+  adresse       String?
   email         String?
   phone         String?
   instagram     String?
   linkedin      String?
+  siteWeb       String?
 
   // Qualification
-  secteur       String   // Thérapeute | Artisan | Fiduciaire | Coach | Autre
-  canal         String   // Instagram | LinkedIn | Email froid | Réseau | Référence
+  secteur       String
+  canal         String
   statut        String   @default("Nouveau")
-  // Nouveau | Contacté | En discussion | Démo planifiée | Négociation | Signé | Perdu
-  urgence       String   @default("Normale") // Haute | Normale | Faible
-  score         Int      @default(3)         // 1-5
+  urgence       String   @default("Normale")
+  score         Int      @default(3)
 
   // Suivi commercial
   dateContact   DateTime @default(now())
   prochainStep  DateTime?
-  packInteret   String?  // Essentiel | Pro | Premium
-  budgetEstime  Int?     // CHF/mois
-  setupEstime   Int?     // Setup one-shot CHF
+  packInteret   String?
+  budgetEstime  Int?
+  setupEstime   Int?
 
-  // Notes et historique
+  // Notes
   notes         String?
   raisonPerte   String?
 
-  // ─── Prospecteur auto (Zefix + enrichissement) ───
-  source            String   @default("MANUAL") // MANUAL | AUTO_ZEFIX | IMPORT_CSV
-  enrichissementAuto Boolean @default(false)
-  raisonSociale     String?  // Nom légal (RC)
-  numeroIDE         String?  @unique // CHE-xxx.xxx.xxx, clé de dédoublonnage
-  canton            String?  // VD | GE | VS | FR | NE | JU | BE
-  npa               String?
-  adresse           String?
-  secteurNOGA       String?  // Code NOGA (ex: 96.02)
-  tailleEntreprise  Int?     // nb employés
-  dateCreationRC    DateTime?
-  siteWeb           String?
-  googleRating      Float?
-  googleReviewsCount Int?
-  signauxDouleur    String?  // JSON stringifié (SQLite)
-  scoreICP          Int?     // 0-100
-  pipelineAuto      String?  // NEW | ENRICHED | QUALIFIED | APPROACHED | SKIPPED
-  derniereEnrichAt  DateTime?
+  // Origine de la donnée — utilisé pour distinguer manuel vs import
+  source        String   @default("MANUAL") // MANUAL | IMPORT_CSV
 
   // Relations
-  interactions      Interaction[]
-  client            Client?
-  contacts          Contact[]
-  approachMessages  ApproachMessage[]
-  enrichmentLogs    EnrichmentLog[]
+  interactions  Interaction[]
+  client        Client?
+  tasks         Task[]
+  tags          ProspectTag[]
+  activities    Activity[]
 
   @@index([statut])
   @@index([urgence])
   @@index([prochainStep])
   @@index([source])
-  @@index([pipelineAuto])
-  @@index([scoreICP])
 }
 
-// Contacts multiples par prospect (B2B : plusieurs interlocuteurs)
-model Contact {
-  id         String   @id @default(cuid())
-  createdAt  DateTime @default(now())
-  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  prospectId String
-  nom        String?
-  prenom     String?
-  fonction   String?
-  email      String?
-  telephone  String?
-  linkedin   String?
-  source     String   // ZEFIX | LOCAL_CH | WEBSITE | GOOGLE | MANUAL
-
-  @@index([prospectId])
-  @@index([email])
-}
-
-// Message d'approche généré à la demande par Claude
-model ApproachMessage {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  prospectId    String
-  canal         String   // EMAIL | LINKEDIN | PHONE
-  contenu       String
-  ton           String?
-  genereA       String   // ON_DEMAND | MANUAL_REGEN
-  utilise       Boolean  @default(false)
-  promptVersion String
-
-  @@index([prospectId])
-}
-
-// Trace chaque appel d'enrichissement (audit LPD)
-model EnrichmentLog {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  prospectId    String
-  source        String   // ZEFIX | LOCAL_CH | GOOGLE_PLACES | WEBSITE
-  statut        String   // OK | SKIPPED | ERROR
-  donneesBrutes String?  // JSON stringifié
-  erreur        String?
-
-  @@index([prospectId])
-  @@index([source])
-}
-
-// Liste noire (domaine ou email) — vérifiée avant enrichissement ET génération
-model OptOut {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  valeur    String   @unique
-  type      String   // EMAIL | DOMAIN
-  raison    String?
-}
-
-// Chaque contact posé avec un prospect (DM, email, appel, démo, note libre)
+// Interactions = trace de chaque contact posé avec le prospect
 model Interaction {
   id          String   @id @default(cuid())
   createdAt   DateTime @default(now())
-  type        String   // DM | Email | Appel | Démo | Relance | Note
+  type        String   // LinkedIn DM | Email | Appel | Démo | Audit | Relance | Note
   contenu     String
   prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   prospectId  String
 
   @@index([prospectId])
+}
+
+// Tasks = todos liées à un prospect (ou globales si prospectId null)
+model Task {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  titre       String
+  description String?
+  dueDate     DateTime?
+  done        Boolean   @default(false)
+  priorite    String    @default("Normale") // Haute | Normale | Faible
+  prospect    Prospect? @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospectId  String?
+
+  @@index([prospectId])
+  @@index([done])
+  @@index([dueDate])
+}
+
+// Tag libre — appliqué à un ou plusieurs prospects
+model Tag {
+  id        String        @id @default(cuid())
+  createdAt DateTime      @default(now())
+  label     String        @unique
+  color     String        @default("#5B3FA6") // hex pour pastille
+  prospects ProspectTag[]
+}
+
+// Jonction many-to-many Prospect ↔ Tag
+model ProspectTag {
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospectId String
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId      String
+
+  @@id([prospectId, tagId])
+  @@index([tagId])
+}
+
+// Activity log auto — chaque changement de statut, création task, etc.
+model Activity {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  type        String   // STATUT_CHANGE | TASK_DONE | NOTE | EMAIL_SENT | INTERACTION
+  description String
+  meta        String?  // JSON stringifié pour contexte (anciens/nouveaux statuts)
+  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospectId  String
+
+  @@index([prospectId])
+  @@index([createdAt])
+}
+
+// Templates email/LinkedIn réutilisables
+model Template {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  nom       String
+  type      String   // EMAIL | LINKEDIN | DM | NOTE
+  sujet     String?
+  contenu   String
+  variables String?  // JSON liste vars dispo : {prenom}, {entreprise}…
+
+  @@index([type])
 }
 
 // Un client = prospect signé, avec un contrat actif
@@ -158,16 +151,14 @@ model Client {
   prospect      Prospect @relation(fields: [prospectId], references: [id])
   prospectId    String   @unique
 
-  // Contrat
-  pack          String   // Essentiel | Pro | Premium
-  mrrCHF        Int      // Revenu mensuel récurrent
-  setupCHF      Int      // Frais de setup one-shot
+  pack          String
+  mrrCHF        Int
+  setupCHF      Int
   dateDebut     DateTime
   prochainRDV   DateTime?
 
-  // Satisfaction
-  nps           Int?     // 0-10
-  statut        String   @default("Actif") // Actif | Pause | Churné
+  nps           Int?
+  statut        String   @default("Actif")
 
   notes         String?
 
@@ -178,7 +169,7 @@ model Client {
 model KPI {
   id        String   @id @default(cuid())
   date      DateTime @default(now())
-  semaine   Int      // numéro de semaine ISO
+  semaine   Int
   annee     Int
   dmEnvoyes Int      @default(0)
   reponses  Int      @default(0)

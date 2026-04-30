@@ -3,7 +3,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Flame, Trophy, LineChart, Sparkles, Radar } from "lucide-react";
+import {
+  LayoutDashboard, Users, Flame, Trophy, LineChart, Sparkles,
+  CheckSquare, Tag, FileText, Calendar,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtCHF } from "@/lib/format";
 
@@ -13,7 +16,10 @@ const ICON_MAP = {
   Flame,
   Trophy,
   LineChart,
-  Radar,
+  CheckSquare,
+  Tag,
+  FileText,
+  Calendar,
 } as const;
 
 type NavItem = { href: string; label: string; icon: keyof typeof ICON_MAP };
@@ -24,6 +30,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Vue d'ensemble",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+      { href: "/calendrier", label: "Calendrier", icon: "Calendar" },
     ],
   },
   {
@@ -31,6 +38,14 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/prospects", label: "Prospects", icon: "Users" },
       { href: "/actions-du-jour", label: "Actions du jour", icon: "Flame" },
+      { href: "/taches", label: "Tâches", icon: "CheckSquare" },
+    ],
+  },
+  {
+    title: "Outils",
+    items: [
+      { href: "/templates", label: "Templates", icon: "FileText" },
+      { href: "/tags", label: "Tags", icon: "Tag" },
     ],
   },
   {

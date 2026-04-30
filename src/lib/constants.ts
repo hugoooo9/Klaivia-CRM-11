@@ -154,9 +154,12 @@ export const NEXT_STEP_BY_TYPE: Record<InteractionType, number> = {
 
 export const KLAIVIA_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+  { href: "/calendrier", label: "Calendrier", icon: "Calendar" },
   { href: "/prospects", label: "Prospects", icon: "Users" },
-  { href: "/prospector", label: "Agent prospecteur", icon: "Radar" },
   { href: "/actions-du-jour", label: "Actions du jour", icon: "Flame" },
+  { href: "/taches", label: "Tâches", icon: "CheckSquare" },
+  { href: "/templates", label: "Templates", icon: "FileText" },
+  { href: "/tags", label: "Tags", icon: "Tag" },
   { href: "/clients", label: "Clients actifs", icon: "Trophy" },
   { href: "/kpis", label: "Saisir mes KPIs", icon: "LineChart" },
 ] as const;
