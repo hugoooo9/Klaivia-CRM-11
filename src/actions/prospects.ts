@@ -109,6 +109,17 @@ export async function changeProspectStatut(id: string, statut: StatutProspect) {
   return updated;
 }
 
+export async function updateProspectNotes(id: string, notes: string) {
+  const updated = await db.prospect.update({
+    where: { id },
+    data: { notes: notes || null },
+  });
+  await logActivity(id, "NOTE_UPDATED", "Notes mises à jour");
+  revalidatePath("/prospects");
+  revalidatePath(`/prospects/${id}`);
+  return updated;
+}
+
 export async function updateProspectScore(id: string, score: number) {
   if (score < 1 || score > 5) throw new Error("Score invalide (1-5)");
   const updated = await db.prospect.update({

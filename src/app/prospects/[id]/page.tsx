@@ -10,6 +10,7 @@ import { ProspectDetailActions } from "@/components/prospects/ProspectDetailActi
 import { ProspectTasks } from "@/components/prospects/ProspectTasks";
 import { ProspectTags } from "@/components/prospects/ProspectTags";
 import { ActivityTimeline } from "@/components/prospects/ActivityTimeline";
+import { ProspectNotes } from "@/components/prospects/ProspectNotes";
 import { db } from "@/lib/db";
 import { initials, avatarColor, fmtDate, fmtRelative, fmtCHF } from "@/lib/format";
 import type { StatutProspect, Urgence } from "@/lib/constants";
@@ -154,13 +155,8 @@ export default async function ProspectDetailPage({
             </dl>
           </div>
 
-          {/* Notes */}
-          <div className="klaivia-card p-5">
-            <h3 className="mb-3 text-base font-semibold text-foreground">Notes</h3>
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-              {prospect.notes || "Aucune note pour le moment."}
-            </p>
-          </div>
+          {/* Notes — éditable inline */}
+          <ProspectNotes prospectId={prospect.id} initialNotes={prospect.notes} />
         </div>
 
         {/* Tags + Tasks */}
