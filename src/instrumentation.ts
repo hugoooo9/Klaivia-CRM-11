@@ -27,6 +27,17 @@ async function runMigrations() {
 
   const prisma = new PrismaClient();
   try {
+    // 0. Force WAL checkpoint + réinitialise journal mode pour libérer les locks
+    // résiduels d'un boot précédent crashé. Critique sur Hostinger shared.
+    try {
+      await prisma.$executeRawUnsafe(`PRAGMA journal_mode=WAL`);
+      await prisma.$executeRawUnsafe(`PRAGMA busy_timeout=10000`);
+      await prisma.$executeRawUnsafe(`PRAGMA wal_checkpoint(TRUNCATE)`);
+      console.log("[instrumentation] SQLite WAL checkpoint OK");
+    } catch (e) {
+      console.warn("[instrumentation] WAL checkpoint failed:", (e as Error).message);
+    }
+
     // Fast path : si toutes les tables critiques existent déjà, on saute la migration.
     // Évite tout lock SQLite sur les boots concurrents (Hostinger spawne plusieurs procs).
     const criticalTables = ["Prospect", "Task", "Tag", "Activity", "Template", "ProspectEmail"];
