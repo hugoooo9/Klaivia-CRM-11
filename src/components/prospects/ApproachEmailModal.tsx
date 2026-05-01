@@ -35,6 +35,7 @@ export function ApproachEmailModal({
 }: Props) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [isGenerating, startGenTransition] = useTransition();
   const [isSending, startSendTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
@@ -90,7 +91,7 @@ export function ApproachEmailModal({
     });
   };
 
-  const onSend = () => {
+  const askConfirmSend = () => {
     if (!subject.trim() || !body.trim()) {
       toast.error("Objet et corps requis");
       return;
@@ -99,18 +100,25 @@ export function ApproachEmailModal({
       toast.error("Ce prospect n'a pas d'adresse email");
       return;
     }
+    setConfirmOpen(true);
+  };
+
+  const onConfirmSend = () => {
     startSendTransition(async () => {
       try {
         await sendApproachEmailV2({ prospectId, subject, body });
         toast.success(`Email envoyé à ${prospectEmail}`);
+        setConfirmOpen(false);
         onOpenChange(false);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Erreur d'envoi");
+        setConfirmOpen(false);
       }
     });
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-card">
         <DialogHeader>
@@ -189,7 +197,7 @@ export function ApproachEmailModal({
             <Button
               type="button"
               size="sm"
-              onClick={onSend}
+              onClick={askConfirmSend}
               disabled={busy || !subject.trim() || !body.trim() || !prospectEmail}
               className="klaivia-btn-primary font-semibold"
             >
@@ -200,5 +208,41 @@ export function ApproachEmailModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Dialog confirmation envoi */}
+    <Dialog open={confirmOpen} onOpenChange={(v) => !isSending && setConfirmOpen(v)}>
+      <DialogContent className="max-w-md bg-card">
+        <DialogHeader>
+          <DialogTitle>Confirmer l&apos;envoi</DialogTitle>
+          <DialogDescription className="text-xs">
+            Le mail va partir vers <span className="font-mono font-semibold text-foreground">{prospectEmail}</span>.
+            Cette action est définitive.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3 text-xs">
+          <div>
+            <span className="text-muted-foreground">Objet :</span>{" "}
+            <span className="font-semibold text-foreground">{subject}</span>
+          </div>
+          <div className="border-t border-border pt-2">
+            <p className="line-clamp-4 whitespace-pre-wrap text-muted-foreground">{body}</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={isSending}>
+            Retour
+          </Button>
+          <Button
+            onClick={onConfirmSend}
+            disabled={isSending}
+            className="klaivia-btn-primary font-semibold"
+          >
+            {isSending ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+            Confirmer & envoyer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
