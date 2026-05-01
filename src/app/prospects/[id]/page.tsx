@@ -11,6 +11,7 @@ import { ProspectTasks } from "@/components/prospects/ProspectTasks";
 import { ProspectTags } from "@/components/prospects/ProspectTags";
 import { ActivityTimeline } from "@/components/prospects/ActivityTimeline";
 import { ProspectNotes } from "@/components/prospects/ProspectNotes";
+import { EmailHistory } from "@/components/prospects/EmailHistory";
 import { db } from "@/lib/db";
 import { initials, avatarColor, fmtDate, fmtRelative, fmtCHF } from "@/lib/format";
 import type { StatutProspect, Urgence } from "@/lib/constants";
@@ -30,6 +31,7 @@ export default async function ProspectDetailPage({
       tasks: { orderBy: [{ done: "asc" }, { dueDate: "asc" }] },
       tags: { include: { tag: true } },
       activities: { orderBy: { createdAt: "desc" }, take: 30 },
+      emails: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -169,6 +171,13 @@ export default async function ProspectDetailPage({
             <ProspectTasks prospectId={prospect.id} tasks={prospect.tasks} />
           </div>
         </div>
+
+        {/* Historique mails IA + brouillons */}
+        <EmailHistory
+          prospectId={prospect.id}
+          prospectEmail={prospect.email}
+          emails={prospect.emails}
+        />
 
         {/* Timeline activités + interactions fusionnées */}
         <div className="mt-6">

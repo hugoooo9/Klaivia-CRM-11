@@ -57,6 +57,7 @@ model Prospect {
   tasks         Task[]
   tags          ProspectTag[]
   activities    Activity[]
+  emails        ProspectEmail[]
 
   @@index([statut])
   @@index([urgence])
@@ -126,6 +127,22 @@ model Activity {
 
   @@index([prospectId])
   @@index([createdAt])
+}
+
+// Mail d'approche IA — généré par Gemini, stocké comme brouillon ou envoyé
+model ProspectEmail {
+  id         String    @id @default(cuid())
+  prospect   Prospect  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospectId String
+  subject    String
+  body       String
+  status     String    // "draft" | "sent"
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([prospectId])
+  @@index([status])
 }
 
 // Templates email/LinkedIn réutilisables

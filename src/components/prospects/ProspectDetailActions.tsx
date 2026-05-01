@@ -4,7 +4,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, MessageSquarePlus, ChevronRight, Trophy, Trash2, Send } from "lucide-react";
+import { Pencil, MessageSquarePlus, ChevronRight, Trophy, Trash2, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -14,6 +14,7 @@ import { ProspectForm } from "./ProspectForm";
 import { InteractionModal } from "./InteractionModal";
 import { ConvertClientModal } from "./ConvertClientModal";
 import { SendEmailDialog } from "./SendEmailDialog";
+import { ApproachEmailModal } from "./ApproachEmailModal";
 import {
   advanceProspectStatut, markProspectPerdu, deleteProspect,
 } from "@/actions/prospects";
@@ -37,6 +38,7 @@ export function ProspectDetailActions({ id, prenom, nom, email, statut, hasClien
   const [editOpen, setEditOpen] = useState(false);
   const [interactOpen, setInteractOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [aiEmailOpen, setAiEmailOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [perduOpen, setPerduOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -98,12 +100,21 @@ export function ProspectDetailActions({ id, prenom, nom, email, statut, hasClien
           <MessageSquarePlus className="size-3.5" /> Ajouter interaction
         </Button>
         <Button
+          size="sm"
+          onClick={() => setAiEmailOpen(true)}
+          disabled={!email}
+          title={email ? "Générer un mail d'approche avec l'IA" : "Ajoute une adresse email au prospect"}
+          className="klaivia-btn-primary font-semibold"
+        >
+          <Sparkles className="size-3.5" /> Mail IA
+        </Button>
+        <Button
           variant="outline" size="sm"
           onClick={() => setEmailOpen(true)}
           disabled={!email}
           title={email ? "Envoyer un email d'approche" : "Ajoute une adresse email au prospect"}
         >
-          <Send className="size-3.5" /> Envoyer email
+          <Send className="size-3.5" /> Email manuel
         </Button>
         {canAdvance && (
           <Button
@@ -137,6 +148,10 @@ export function ProspectDetailActions({ id, prenom, nom, email, statut, hasClien
       <SendEmailDialog
         open={emailOpen} onOpenChange={setEmailOpen}
         prospectId={id} prospectName={fullName} prospectEmail={email}
+      />
+      <ApproachEmailModal
+        open={aiEmailOpen} onOpenChange={setAiEmailOpen}
+        prospectId={id} prospectEmail={email}
       />
       <ConvertClientModal
         open={convertOpen} onOpenChange={setConvertOpen}

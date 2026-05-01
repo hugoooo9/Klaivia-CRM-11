@@ -75,6 +75,33 @@ src/
 - **Export CSV/JSON** : `/api/export?type=prospects|clients|interactions&format=csv|json`
 - **Recherche globale** : Ctrl+K ouvre une palette de commandes (navigation + recherche prospects/clients)
 
+## Mail d'approche IA (Gemini)
+
+Le bouton **« Mail IA »** sur la fiche prospect appelle l'API Gemini de Google AI Studio pour générer automatiquement un mail d'approche personnalisé (objet + corps), modifiable avant envoi via SMTP.
+
+### Obtenir une clé Gemini
+
+1. Va sur [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+2. Connecte-toi avec un compte Google
+3. Clique **Create API key** → choisis ou crée un projet Google Cloud
+4. Copie la clé générée
+
+Le quota gratuit est de **1500 requêtes/jour** sur `gemini-2.0-flash`, largement suffisant pour un usage CRM.
+
+### Configuration
+
+Ajoute la clé dans :
+
+- **En local** : `.env` → `GEMINI_API_KEY=AIza...`
+- **En prod (Hostinger)** : hPanel → Sites Web → Node.js → Variables d'environnement → ajouter `GEMINI_API_KEY`
+
+### Workflow
+
+1. Ouvrir la fiche prospect → cliquer **« Mail IA »**
+2. Gemini génère automatiquement objet + corps en se basant sur secteur, canal, urgence, score, notes
+3. Modifier librement, puis **Régénérer** (nouvelle proposition), **Brouillon** (sauvegarde sans envoyer) ou **Envoyer** (SMTP + statut → Contacté + archive dans l'historique)
+4. L'historique des mails (envoyés + brouillons) s'affiche en bas de la fiche prospect
+
 ## Conventions code
 
 - **Variables** : anglais (`prospectId`, `handleClick`)
