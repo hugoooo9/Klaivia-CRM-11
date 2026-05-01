@@ -70,8 +70,13 @@ export function ApproachEmailModal({
     startGenTransition(async () => {
       try {
         const res = await generateApproachEmail(prospectId);
-        setSubject(res.subject);
-        setBody(res.body);
+        if (res.ok) {
+          setSubject(res.subject);
+          setBody(res.body);
+        } else {
+          setErrorMsg(res.error);
+          toast.error(res.error);
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Erreur génération";
         setErrorMsg(msg);
@@ -87,9 +92,13 @@ export function ApproachEmailModal({
     }
     startSaveTransition(async () => {
       try {
-        await saveDraftEmail({ prospectId, subject, body });
-        toast.success("Brouillon enregistré");
-        onOpenChange(false);
+        const res = await saveDraftEmail({ prospectId, subject, body });
+        if (res.ok) {
+          toast.success("Brouillon enregistré");
+          onOpenChange(false);
+        } else {
+          toast.error(res.error);
+        }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Erreur");
       }
@@ -111,10 +120,15 @@ export function ApproachEmailModal({
   const onConfirmSend = () => {
     startSendTransition(async () => {
       try {
-        await sendApproachEmailV2({ prospectId, subject, body });
-        toast.success(`Email envoyé à ${prospectEmail}`);
-        setConfirmOpen(false);
-        onOpenChange(false);
+        const res = await sendApproachEmailV2({ prospectId, subject, body });
+        if (res.ok) {
+          toast.success(`Email envoyé à ${prospectEmail}`);
+          setConfirmOpen(false);
+          onOpenChange(false);
+        } else {
+          toast.error(res.error);
+          setConfirmOpen(false);
+        }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Erreur d'envoi");
         setConfirmOpen(false);
