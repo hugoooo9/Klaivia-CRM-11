@@ -103,10 +103,10 @@ export function ProspectDetailActions({ id, prenom, nom, email, statut, hasClien
           size="sm"
           onClick={() => setAiEmailOpen(true)}
           disabled={!email}
-          title={email ? "Générer un mail d'approche avec l'IA" : "Ajoute une adresse email au prospect"}
+          title={email ? "Générer un mail d'approche personnalisé" : "Ajoute une adresse email au prospect"}
           className="klaivia-btn-primary font-semibold"
         >
-          <Sparkles className="size-3.5" /> Mail IA
+          <Sparkles className="size-3.5" /> Mail d&apos;approche
         </Button>
         <Button
           variant="outline" size="sm"

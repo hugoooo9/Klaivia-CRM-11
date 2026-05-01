@@ -1,19 +1,17 @@
-// Server Actions — génération + envoi + brouillon de mails d'approche IA
-// Auth gérée par le proxy.ts middleware (cookie HMAC) — pas de check explicite ici.
+// Server Actions — mail d'approche optimisé (template déterministe) + envoi + brouillon
+// Auth gérée par le proxy.ts middleware (cookie HMAC).
 "use server";
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mailer";
-import { generateEmailWithRetry, type GeneratedEmail } from "@/lib/gemini";
+import { buildApproachEmail, type GeneratedApproachEmail } from "@/lib/approach-template";
 
 export type GenerateResult =
   | { ok: true; subject: string; body: string }
   | { ok: false; error: string };
 
-// 1. Génère un mail via Gemini à partir des infos du prospect
-// Retourne {ok, ...} au lieu de throw pour que les erreurs traversent
-// la frontière Server Action sans être masquées en prod par Next.js.
+// 1. Génère un mail d'approche pré-rempli avec les infos du prospect (sans IA)
 export async function generateApproachEmail(prospectId: string): Promise<GenerateResult> {
   try {
     if (!prospectId) return { ok: false, error: "prospectId requis" };
@@ -27,23 +25,17 @@ export async function generateApproachEmail(prospectId: string): Promise<Generat
         ville: true,
         secteur: true,
         canal: true,
-        urgence: true,
-        score: true,
-        notes: true,
       },
     });
     if (!prospect) return { ok: false, error: "Prospect introuvable" };
 
-    const result = await generateEmailWithRetry({
+    const result: GeneratedApproachEmail = buildApproachEmail({
       entreprise: prospect.entreprise,
       prenom: prospect.prenom === "—" ? null : prospect.prenom,
       nom: prospect.nom === "—" ? null : prospect.nom,
       ville: prospect.ville,
       secteur: prospect.secteur || null,
       canal: prospect.canal || null,
-      urgence: prospect.urgence,
-      score: prospect.score,
-      notes: prospect.notes,
     });
     return { ok: true, subject: result.subject, body: result.body };
   } catch (e) {
@@ -53,7 +45,7 @@ export async function generateApproachEmail(prospectId: string): Promise<Generat
   }
 }
 
-// 2. Sauvegarde un brouillon (sans envoi)
+// 2. Sauvegarde un brouillon
 export async function saveDraftEmail(input: {
   prospectId: string;
   subject: string;
@@ -144,7 +136,7 @@ export async function sendApproachEmailV2(input: {
         data: {
           prospectId: prospect.id,
           type: "STATUT_CHANGE",
-          description: "Nouveau → Contacté (auto via envoi mail IA)",
+          description: "Nouveau → Contacté (auto via envoi mail)",
         },
       });
     }

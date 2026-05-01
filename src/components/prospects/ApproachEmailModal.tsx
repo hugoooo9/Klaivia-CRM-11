@@ -1,4 +1,4 @@
-// Modal "Mail d'approche IA" — génère via Gemini, édite, envoie ou sauvegarde brouillon
+// Modal "Mail d'approche" — pré-remplit via template optimisé selon secteur prospect, édite, envoie ou sauvegarde brouillon
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
@@ -141,7 +141,7 @@ export function ApproachEmailModal({
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-card">
         <DialogHeader>
-          <DialogTitle>Mail d&apos;approche IA</DialogTitle>
+          <DialogTitle>Mail d&apos;approche</DialogTitle>
           <DialogDescription className="text-xs">
             {prospectEmail ? (
               <>Destinataire : <span className="font-mono">{prospectEmail}</span></>
@@ -154,13 +154,13 @@ export function ApproachEmailModal({
         {isGenerating && !subject && !body ? (
           <div className="flex flex-col items-center gap-3 py-12">
             <Loader2 className="size-8 animate-spin text-[color:var(--color-klaivia-violet)]" />
-            <p className="text-sm font-medium text-foreground">Klaivia rédige le mail…</p>
-            <p className="text-xs text-muted-foreground">Gemini analyse le profil prospect</p>
+            <p className="text-sm font-medium text-foreground">Préparation du mail…</p>
+            <p className="text-xs text-muted-foreground">Personnalisation avec les infos du prospect</p>
           </div>
         ) : errorMsg && !subject && !body ? (
           <div className="space-y-3 rounded-md border border-destructive/30 bg-destructive/10 p-4">
             <div>
-              <p className="text-sm font-semibold text-destructive">Erreur génération Gemini</p>
+              <p className="text-sm font-semibold text-destructive">Erreur génération du mail</p>
               <p className="mt-1 whitespace-pre-wrap text-xs text-foreground">{errorMsg}</p>
             </div>
             <Button onClick={runGenerate} size="sm" variant="outline">
@@ -200,7 +200,7 @@ export function ApproachEmailModal({
             size="sm"
             onClick={runGenerate}
             disabled={busy}
-            title="Régénérer avec Gemini"
+            title="Régénérer le template"
           >
             {isGenerating ? (
               <Loader2 className="size-3.5 animate-spin" />
