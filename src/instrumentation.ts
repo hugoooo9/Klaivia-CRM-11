@@ -104,29 +104,35 @@ async function runMigrations() {
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
 
+      let okCount = 0;
+      let failCount = 0;
       for (const stmt of statements) {
         try {
           await prisma.$executeRawUnsafe(stmt);
+          okCount += 1;
         } catch (e) {
-          // Ignore les erreurs idempotentes (colonne déjà droppée, table déjà existe)
-          const msg = (e as Error).message;
-          if (
-            msg.includes("no such column") ||
-            msg.includes("already exists") ||
-            msg.includes("duplicate column")
-          ) {
-            console.warn(`[instrumentation] stmt ignoré (idempotent): ${msg.slice(0, 100)}`);
-          } else {
-            throw e;
-          }
+          // Ne JAMAIS rethrow — on log et continue. Migration considérée appliquée
+          // même si certains statements échouent (idempotent en pratique).
+          // Évite la boucle infinie de boot où une migration semi-appliquée
+          // est retentée à chaque démarrage.
+          failCount += 1;
+          const msg = (e as Error).message?.slice(0, 200) ?? String(e);
+          console.warn(`[instrumentation] stmt skipped (${dir}): ${msg}`);
         }
       }
 
-      await prisma.$executeRawUnsafe(
-        `INSERT OR IGNORE INTO _klaivia_migrations (name) VALUES ('${dir.replace(/'/g, "''")}')`,
-      );
+      // Marque la migration comme appliquée quoi qu'il arrive
+      try {
+        await prisma.$executeRawUnsafe(
+          `INSERT OR IGNORE INTO _klaivia_migrations (name) VALUES ('${dir.replace(/'/g, "''")}')`,
+        );
+      } catch (e) {
+        console.error(`[instrumentation] tracking insert failed (${dir}):`, (e as Error).message);
+      }
       appliedCount += 1;
-      console.log(`[instrumentation] migration ${dir} appliquée (${statements.length} stmts)`);
+      console.log(
+        `[instrumentation] migration ${dir} marquée appliquée (${okCount} OK, ${failCount} skipped)`,
+      );
     }
 
     console.log(
