@@ -27,6 +27,23 @@ async function runMigrations() {
 
   const prisma = new PrismaClient();
   try {
+    // Fast path : si toutes les tables critiques existent déjà, on saute la migration.
+    // Évite tout lock SQLite sur les boots concurrents (Hostinger spawne plusieurs procs).
+    const criticalTables = ["Prospect", "Task", "Tag", "Activity", "Template", "ProspectEmail"];
+    const placeholders = criticalTables.map(() => "?").join(",");
+    const existing = (await prisma.$queryRawUnsafe(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name IN (${placeholders})`,
+      ...criticalTables,
+    )) as { name: string }[];
+
+    if (existing.length === criticalTables.length) {
+      console.log("[instrumentation] toutes les tables critiques OK, skip migration");
+      return;
+    }
+    console.log(
+      `[instrumentation] tables manquantes (${criticalTables.length - existing.length}/${criticalTables.length}), exécute migration`,
+    );
+
     // 1. Crée la table de tracking si absente
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS _klaivia_migrations (
