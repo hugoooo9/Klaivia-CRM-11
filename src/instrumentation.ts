@@ -5,9 +5,22 @@
 // Tracking : table _klaivia_migrations stocke les noms déjà appliqués pour idempotence
 // même quand de nouvelles migrations arrivent après le premier boot.
 export async function register() {
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  if (process.env.SKIP_BOOT_MIGRATE === "true") return;
+  // Garde top-level pour éviter tout crash boot — wrappe TOUT dans try/catch
+  try {
+    if (process.env.NEXT_RUNTIME !== "nodejs") return;
+    if (process.env.SKIP_BOOT_MIGRATE === "true") return;
 
+    await runMigrations();
+  } catch (e) {
+    // Jamais throw au boot — log et continue. App doit pouvoir démarrer même si migration KO.
+    console.error(
+      "[instrumentation] register() top-level error:",
+      e instanceof Error ? `${e.message}\n${e.stack}` : String(e),
+    );
+  }
+}
+
+async function runMigrations() {
   const { PrismaClient } = await import("@prisma/client");
   const fs = await import("node:fs");
   const path = await import("node:path");
