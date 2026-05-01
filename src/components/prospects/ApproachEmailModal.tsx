@@ -35,6 +35,7 @@ export function ApproachEmailModal({
 }: Props) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isGenerating, startGenTransition] = useTransition();
   const [isSending, startSendTransition] = useTransition();
@@ -60,17 +61,21 @@ export function ApproachEmailModal({
     if (!open) {
       setSubject("");
       setBody("");
+      setErrorMsg(null);
     }
   }, [open]);
 
   const runGenerate = () => {
+    setErrorMsg(null);
     startGenTransition(async () => {
       try {
         const res = await generateApproachEmail(prospectId);
         setSubject(res.subject);
         setBody(res.body);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Erreur génération");
+        const msg = e instanceof Error ? e.message : "Erreur génération";
+        setErrorMsg(msg);
+        toast.error(msg);
       }
     });
   };
@@ -137,6 +142,16 @@ export function ApproachEmailModal({
             <Loader2 className="size-8 animate-spin text-[color:var(--color-klaivia-violet)]" />
             <p className="text-sm font-medium text-foreground">Klaivia rédige le mail…</p>
             <p className="text-xs text-muted-foreground">Gemini analyse le profil prospect</p>
+          </div>
+        ) : errorMsg && !subject && !body ? (
+          <div className="space-y-3 rounded-md border border-destructive/30 bg-destructive/10 p-4">
+            <div>
+              <p className="text-sm font-semibold text-destructive">Erreur génération Gemini</p>
+              <p className="mt-1 whitespace-pre-wrap text-xs text-foreground">{errorMsg}</p>
+            </div>
+            <Button onClick={runGenerate} size="sm" variant="outline">
+              <RefreshCw className="size-3.5" /> Réessayer
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">

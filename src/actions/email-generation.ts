@@ -27,17 +27,24 @@ export async function generateApproachEmail(prospectId: string): Promise<Generat
   });
   if (!prospect) throw new Error("Prospect introuvable");
 
-  return generateEmailWithRetry({
-    entreprise: prospect.entreprise,
-    prenom: prospect.prenom === "—" ? null : prospect.prenom,
-    nom: prospect.nom === "—" ? null : prospect.nom,
-    ville: prospect.ville,
-    secteur: prospect.secteur || null,
-    canal: prospect.canal || null,
-    urgence: prospect.urgence,
-    score: prospect.score,
-    notes: prospect.notes,
-  });
+  try {
+    return await generateEmailWithRetry({
+      entreprise: prospect.entreprise,
+      prenom: prospect.prenom === "—" ? null : prospect.prenom,
+      nom: prospect.nom === "—" ? null : prospect.nom,
+      ville: prospect.ville,
+      secteur: prospect.secteur || null,
+      canal: prospect.canal || null,
+      urgence: prospect.urgence,
+      score: prospect.score,
+      notes: prospect.notes,
+    });
+  } catch (e) {
+    // Log côté serveur pour Hostinger logs
+    console.error("[generateApproachEmail] échec:", (e as Error).message);
+    // Re-throw avec message clair pour le client
+    throw e instanceof Error ? e : new Error(String(e));
+  }
 }
 
 // 2. Sauvegarde un brouillon (sans envoi)

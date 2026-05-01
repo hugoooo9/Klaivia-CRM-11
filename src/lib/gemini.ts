@@ -59,11 +59,13 @@ Génère le mail d'approche au format JSON { "subject": "...", "body": "..." }.`
 
 async function callGemini(prospect: GeminiProspectInput): Promise<GeneratedEmail> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY non configuré dans les variables d'environnement.");
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error(
+      "GEMINI_API_KEY absent ou vide côté serveur. Vérifie les variables d'environnement Hostinger (hPanel → Node.js → Environment Variables) et redémarre l'app après ajout.",
+    );
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
   const ctrl = new AbortController();
   const timeoutId = setTimeout(() => ctrl.abort(), GEMINI_TIMEOUT_MS);
@@ -72,7 +74,10 @@ async function callGemini(prospect: GeminiProspectInput): Promise<GeneratedEmail
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
       signal: ctrl.signal,
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -88,6 +93,7 @@ async function callGemini(prospect: GeminiProspectInput): Promise<GeneratedEmail
     if ((e as Error).name === "AbortError") {
       throw new Error("Gemini timeout (30s) — réessaye dans un instant.");
     }
+    console.error("[gemini] fetch error:", e);
     throw new Error(`Connexion Gemini impossible : ${(e as Error).message}`);
   } finally {
     clearTimeout(timeoutId);
@@ -95,18 +101,43 @@ async function callGemini(prospect: GeminiProspectInput): Promise<GeneratedEmail
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");
+    console.error(`[gemini] HTTP ${response.status}:`, errorText.slice(0, 500));
     if (response.status === 429) {
       throw new Error("Limite de débit Gemini atteinte. Réessaye dans 1 minute.");
+    }
+    if (response.status === 400 || response.status === 401 || response.status === 403) {
+      throw new Error(
+        `Clé Gemini rejetée (HTTP ${response.status}). Vérifie qu'elle est valide sur https://aistudio.google.com/apikey et autorisée pour Generative Language API.`,
+      );
+    }
+    if (response.status === 404) {
+      throw new Error(
+        `Modèle Gemini introuvable (HTTP 404). Le modèle "${GEMINI_MODEL}" est peut-être deprecated dans cette région.`,
+      );
     }
     throw new Error(`Gemini a renvoyé ${response.status} : ${errorText.slice(0, 200)}`);
   }
 
   type GeminiResponse = {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
+    candidates?: {
+      content?: { parts?: { text?: string }[] };
+      finishReason?: string;
+    }[];
+    promptFeedback?: { blockReason?: string };
   };
   const data = (await response.json()) as GeminiResponse;
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (data.promptFeedback?.blockReason) {
+    throw new Error(`Gemini a bloqué la requête : ${data.promptFeedback.blockReason}`);
+  }
+  const candidate = data.candidates?.[0];
+  if (candidate?.finishReason && candidate.finishReason !== "STOP") {
+    console.error("[gemini] finish reason:", candidate.finishReason);
+    throw new Error(`Génération interrompue : ${candidate.finishReason}`);
+  }
+  const text = candidate?.content?.parts?.[0]?.text;
   if (!text) {
+    console.error("[gemini] empty response:", JSON.stringify(data).slice(0, 500));
     throw new Error("Gemini a renvoyé une réponse vide.");
   }
 
