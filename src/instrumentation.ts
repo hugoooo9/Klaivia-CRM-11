@@ -40,11 +40,7 @@ async function runMigrations() {
 
     // Fast path : si toutes les tables critiques existent déjà, on saute la migration.
     // Évite tout lock SQLite sur les boots concurrents (Hostinger spawne plusieurs procs).
-    // ⚠ Quand on ajoute un nouveau model Prisma, AJOUTER son nom à cette liste —
-    // sinon la migration correspondante ne tournera jamais sur les DB existantes.
-    const criticalTables = [
-      "Prospect", "Task", "Tag", "Activity", "Template", "ProspectEmail", "Attachment",
-    ];
+    const criticalTables = ["Prospect", "Task", "Tag", "Activity", "Template", "ProspectEmail"];
     const placeholders = criticalTables.map(() => "?").join(",");
     const existing = (await prisma.$queryRawUnsafe(
       `SELECT name FROM sqlite_master WHERE type='table' AND name IN (${placeholders})`,
