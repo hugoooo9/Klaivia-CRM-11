@@ -186,9 +186,10 @@ export function buildApproachEmail(p: ProspectInfo): GeneratedApproachEmail {
     ? `Vous voulez que je vous montre concrètement ce que ça donnerait pour ${company} ? 10 minutes suffisent.`
     : `Je peux vous montrer concrètement ce que ça donnerait — 10 minutes en visio, sans engagement.`;
 
-  // Format scannable : 3-4 paragraphes courts
-  // Pas de signature dans le corps — elle est ajoutée automatiquement par mailer.ts
-  // (signature HTML pro avec logo Klaivia + liens Instagram/site)
+  // Format scannable : 3-4 paragraphes courts.
+  // La signature texte ci-dessous est visible dans la modal (le user sait ce qui sera envoyé).
+  // À l'envoi, mailer.ts détecte le marker "—\nKlaivia" et remplace ces lignes par la
+  // version HTML pro designée (logo + liens cliquables).
   const body = `${greeting}
 
 ${intro} ${pitch.hook}
@@ -199,7 +200,11 @@ ${pitch.solution}
 
 ${cta}
 
-Hugo`;
+Hugo
+—
+Klaivia · Agence IA & Sites Web
+Sites web · Automatisations · Agents IA pour PME romandes
+klaivia.ch · @klaivia.agency · contact@klaivia.ch`;
 
   return { subject, body };
 }

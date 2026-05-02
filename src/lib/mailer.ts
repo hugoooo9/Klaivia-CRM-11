@@ -70,9 +70,19 @@ export async function sendMail(input: SendMailInput): Promise<{ messageId: strin
   return { messageId: info.messageId };
 }
 
-// Construit l'HTML complet : corps user + signature pro
+// Strip la signature texte du body si elle est présente.
+// Détecte le marker "\n—\nKlaivia" qu'on injecte dans approach-template.ts.
+function stripTextSignature(text: string): string {
+  // Marker = ligne "—" suivie de "Klaivia · ..."
+  const idx = text.search(/\n[—\-]+\s*\nKlaivia/);
+  if (idx === -1) return text;
+  return text.slice(0, idx).trimEnd();
+}
+
+// Construit l'HTML complet : corps user (sans sig texte) + signature HTML pro
 function buildHtmlEmail(text: string): string {
-  const escaped = text
+  const stripped = stripTextSignature(text);
+  const escaped = stripped
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
@@ -152,6 +162,11 @@ Sites web · Automatisations · Agents IA pour PME romandes
 klaivia.ch · @klaivia.agency · contact@klaivia.ch`;
 
 function appendTextSignature(body: string): string {
+  // Si le body contient déjà la signature texte (insérée par approach-template.ts),
+  // ne pas dupliquer.
+  if (/\n[—\-]+\s*\nKlaivia/.test(body)) {
+    return body;
+  }
   return body.trimEnd() + KLAIVIA_SIGNATURE_TEXT;
 }
 
