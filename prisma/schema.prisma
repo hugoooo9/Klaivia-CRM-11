@@ -58,6 +58,7 @@ model Prospect {
   tags          ProspectTag[]
   activities    Activity[]
   emails        ProspectEmail[]
+  attachments   Attachment[]
 
   @@index([statut])
   @@index([urgence])
@@ -127,6 +128,20 @@ model Activity {
 
   @@index([prospectId])
   @@index([createdAt])
+}
+
+// Pièces jointes (devis, contrats, propositions) attachées à un prospect
+model Attachment {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospectId  String
+  filename    String
+  mimeType    String
+  size        Int      // taille en bytes
+  data        Bytes    // contenu binaire stocké en BLOB SQLite
+
+  @@index([prospectId])
 }
 
 // Mail d'approche IA — généré par Gemini, stocké comme brouillon ou envoyé
