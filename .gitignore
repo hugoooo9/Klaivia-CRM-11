@@ -38,6 +38,8 @@ yarn-error.log*
 # Prisma SQLite local — la base est recréée à chaque déploiement via `prisma migrate`
 prisma/*.db
 prisma/*.db-journal
+prisma/*.db-shm
+prisma/*.db-wal
 
 # vercel
 .vercel
