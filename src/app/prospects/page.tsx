@@ -67,8 +67,8 @@ export default async function ProspectsPage({
   );
   const mrrFor = (p: (typeof prospects)[number]): number => {
     if (p.budgetEstime && p.budgetEstime > 0) return p.budgetEstime;
-    const pack = (p.packInteret ?? "Growth IA") as Pack;
-    return PACK_MRR[pack] ?? PACK_MRR["Growth IA"];
+    const pack = (p.packInteret ?? "Pack Agent IA") as Pack;
+    return PACK_MRR[pack] ?? PACK_MRR["Pack Agent IA"];
   };
   const weightedForecast = activePipeline.reduce((sum, p) => {
     const prob = STATUT_PROBABILITY[p.statut as StatutProspect] ?? 0;

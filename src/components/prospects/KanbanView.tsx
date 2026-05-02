@@ -37,7 +37,7 @@ type Prospect = {
 function weightedValue(p: Prospect): number {
   const mrr = p.budgetEstime && p.budgetEstime > 0
     ? p.budgetEstime
-    : (PACK_MRR[(p.packInteret ?? "Growth IA") as Pack] ?? PACK_MRR["Growth IA"]);
+    : (PACK_MRR[(p.packInteret ?? "Pack Agent IA") as Pack] ?? PACK_MRR["Pack Agent IA"]);
   const prob = STATUT_PROBABILITY[p.statut as StatutProspect] ?? 0;
   return mrr * prob;
 }

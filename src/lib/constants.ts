@@ -40,26 +40,24 @@ export type Urgence = (typeof URGENCES)[number];
 
 // Offres agents IA Klaivia — pricing réaliste agence suisse (CHF/mois)
 export const PACKS = [
-  "Starter IA",       // 1 agent email sortant · qualification + relances
-  "Growth IA",        // 2-3 agents · inbound + outbound + meeting booker
-  "Scale IA",         // suite complète + intégrations custom + support prioritaire
-  "Custom",           // sur-mesure, stack bespoke
+  "Pack Web",                 // site web (vitrine / landing / e-commerce léger)
+  "Pack Automatisation IA",   // workflows automatisés (Make/n8n + scripts custom)
+  "Pack Agent IA",            // agent vocal / conversationnel (qualification, RDV, support)
 ] as const;
 export type Pack = (typeof PACKS)[number];
 
+// MRR par pack — CHF/mois (récurrent maintenance/hébergement/support)
 export const PACK_MRR: Record<Pack, number> = {
-  "Starter IA": 890,
-  "Growth IA": 1890,
-  "Scale IA": 3900,
-  "Custom": 5900,
+  "Pack Web": 0,                    // site web → pas de MRR par défaut (one-shot)
+  "Pack Automatisation IA": 290,    // maintenance + hébergement automation
+  "Pack Agent IA": 890,             // agent vocal/conversationnel + tokens IA
 };
 
 // Frais setup one-shot (création site / agent / automatisation) par pack — CHF
 export const PACK_SETUP: Record<Pack, number> = {
-  "Starter IA": 800,
-  "Growth IA": 1500,
-  "Scale IA": 3500,
-  "Custom": 6000,
+  "Pack Web": 2500,
+  "Pack Automatisation IA": 1500,
+  "Pack Agent IA": 3500,
 };
 
 // Cas d'usage principaux que Klaivia automatise pour ses clients

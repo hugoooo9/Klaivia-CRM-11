@@ -24,8 +24,8 @@ type Props = {
 };
 
 export function ConvertClientModal({ open, onOpenChange, prospectId, prospectName, defaultPack }: Props) {
-  const [pack, setPack] = useState<Pack>(defaultPack ?? "Growth IA");
-  const [mrr, setMrr] = useState<number>(defaultPack ? PACK_MRR[defaultPack] : PACK_MRR["Growth IA"]);
+  const [pack, setPack] = useState<Pack>(defaultPack ?? "Pack Agent IA");
+  const [mrr, setMrr] = useState<number>(defaultPack ? PACK_MRR[defaultPack] : PACK_MRR["Pack Agent IA"]);
   const [setupCHF, setSetupCHF] = useState<number>(1200);
   const [dateDebut, setDateDebut] = useState<string>(new Date().toISOString().slice(0, 10));
   const [isPending, startTransition] = useTransition();
