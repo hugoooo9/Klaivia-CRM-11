@@ -187,6 +187,8 @@ export function buildApproachEmail(p: ProspectInfo): GeneratedApproachEmail {
     : `Je peux vous montrer concrètement ce que ça donnerait — 10 minutes en visio, sans engagement.`;
 
   // Format scannable : 3-4 paragraphes courts
+  // Pas de signature dans le corps — elle est ajoutée automatiquement par mailer.ts
+  // (signature HTML pro avec logo Klaivia + liens Instagram/site)
   const body = `${greeting}
 
 ${intro} ${pitch.hook}
@@ -197,9 +199,7 @@ ${pitch.solution}
 
 ${cta}
 
-Hugo
-Klaivia — agents IA pour PME romandes
-contact@klaivia.ch`;
+Hugo`;
 
   return { subject, body };
 }
