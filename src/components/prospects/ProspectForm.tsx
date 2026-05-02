@@ -1,7 +1,7 @@
 // Modal de création / édition d'un prospect avec validation Zod
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -34,30 +34,43 @@ export function ProspectForm({ open, onOpenChange, initial }: Props) {
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
 
+  // Construit les defaultValues à partir de `initial`
+  const buildDefaults = (init?: ProspectData): ProspectInput => ({
+    prenom: init?.prenom ?? "",
+    nom: init?.nom ?? "",
+    entreprise: init?.entreprise ?? "",
+    ville: init?.ville ?? "",
+    email: init?.email ?? "",
+    phone: init?.phone ?? "",
+    instagram: init?.instagram ?? "",
+    linkedin: init?.linkedin ?? "",
+    secteur: init?.secteur ?? "",
+    canal: init?.canal ?? "",
+    statut: init?.statut ?? "Nouveau",
+    urgence: init?.urgence ?? "Normale",
+    score: init?.score ?? 3,
+    prochainStep: init?.prochainStep ?? "",
+    packInteret: init?.packInteret ?? "",
+    budgetEstime: init?.budgetEstime,
+    setupEstime: init?.setupEstime,
+    notes: init?.notes ?? "",
+    raisonPerte: init?.raisonPerte ?? "",
+  });
+
   const form = useForm<ProspectInput>({
     resolver: zodResolver(prospectSchema),
-    defaultValues: {
-      prenom: initial?.prenom ?? "",
-      nom: initial?.nom ?? "",
-      entreprise: initial?.entreprise ?? "",
-      ville: initial?.ville ?? "",
-      email: initial?.email ?? "",
-      phone: initial?.phone ?? "",
-      instagram: initial?.instagram ?? "",
-      linkedin: initial?.linkedin ?? "",
-      secteur: initial?.secteur ?? "",
-      canal: initial?.canal ?? "",
-      statut: initial?.statut ?? "Nouveau",
-      urgence: initial?.urgence ?? "Normale",
-      score: initial?.score ?? 3,
-      prochainStep: initial?.prochainStep ?? "",
-      packInteret: initial?.packInteret ?? "",
-      budgetEstime: initial?.budgetEstime,
-      setupEstime: initial?.setupEstime,
-      notes: initial?.notes ?? "",
-      raisonPerte: initial?.raisonPerte ?? "",
-    },
+    defaultValues: buildDefaults(initial),
   });
+
+  // Reset du form quand `initial` change OU à chaque ouverture du dialog —
+  // sinon useForm garde l'état initial du premier mount et les modifs se "réinitialisent".
+  useEffect(() => {
+    if (open) {
+      form.reset(buildDefaults(initial));
+      setServerError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initial?.id]);
 
   const onSubmit = (data: ProspectInput) => {
     setServerError(null);

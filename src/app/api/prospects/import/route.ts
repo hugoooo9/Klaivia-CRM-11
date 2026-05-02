@@ -176,7 +176,7 @@ async function parseSpreadsheet(buf: Buffer): Promise<PartialProspect[]> {
 
   return dataRows.map((row) => {
     const out: PartialProspect = {};
-    headers.forEach((h, i) => {
+    headers.forEach((_h, i) => {
       const key = headerMap[i];
       if (!key) return;
       const val = row[i];
@@ -184,10 +184,42 @@ async function parseSpreadsheet(buf: Buffer): Promise<PartialProspect[]> {
       if (key === "score") {
         const n = Number(val);
         if (Number.isFinite(n)) out.score = Math.max(1, Math.min(5, Math.round(n)));
-      } else {
-        (out as Record<string, string>)[key] = String(val).trim();
+        return;
       }
+      const str = String(val).trim();
+      if (!str) return;
+
+      // Champ email : extrait l'email valide depuis du texte type
+      // "info@example.ch", "Contact: foo@bar.ch", "(via site) — info@a.ch"
+      // Si aucun email valide trouvé → ignorer ou rediriger en notes
+      if (key === "email") {
+        const m = str.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+        if (m) {
+          out.email = m[0].toLowerCase();
+        } else {
+          // texte non-email (ex: "(via site)", "via formulaire") → en notes
+          out.notes = [out.notes, `Email source : ${str}`].filter(Boolean).join("\n");
+        }
+        return;
+      }
+
+      (out as Record<string, string>)[key] = str;
     });
+
+    // Fallback : si pas d'email trouvé dans la colonne dédiée, scanne TOUTES les cellules
+    // de la ligne pour récupérer la première adresse valide (souvent dans notes / réseaux).
+    if (!out.email) {
+      const emailRe = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+      for (const cell of row) {
+        if (cell == null || cell === "") continue;
+        const m = String(cell).match(emailRe);
+        if (m) {
+          out.email = m[0].toLowerCase();
+          break;
+        }
+      }
+    }
+
     return out;
   });
 }
