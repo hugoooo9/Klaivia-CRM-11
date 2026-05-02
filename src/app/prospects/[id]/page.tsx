@@ -12,7 +12,6 @@ import { ProspectTags } from "@/components/prospects/ProspectTags";
 import { ActivityTimeline } from "@/components/prospects/ActivityTimeline";
 import { ProspectNotes } from "@/components/prospects/ProspectNotes";
 import { EmailHistory } from "@/components/prospects/EmailHistory";
-import { ProspectAttachments } from "@/components/prospects/ProspectAttachments";
 import { db } from "@/lib/db";
 import { initials, avatarColor, fmtDate, fmtRelative, fmtCHF } from "@/lib/format";
 import type { StatutProspect, Urgence } from "@/lib/constants";
@@ -33,10 +32,6 @@ export default async function ProspectDetailPage({
       tags: { include: { tag: true } },
       activities: { orderBy: { createdAt: "desc" }, take: 30 },
       emails: { orderBy: { createdAt: "desc" } },
-      attachments: {
-        orderBy: { createdAt: "desc" },
-        select: { id: true, filename: true, mimeType: true, size: true, createdAt: true },
-      },
     },
   });
 
@@ -175,14 +170,6 @@ export default async function ProspectDetailPage({
           <div className="lg:col-span-2">
             <ProspectTasks prospectId={prospect.id} tasks={prospect.tasks} />
           </div>
-        </div>
-
-        {/* Pièces jointes (devis, contrats, PDF) */}
-        <div className="mt-6">
-          <ProspectAttachments
-            prospectId={prospect.id}
-            attachments={prospect.attachments}
-          />
         </div>
 
         {/* Historique mails IA + brouillons */}
