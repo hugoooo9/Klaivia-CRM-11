@@ -2,7 +2,15 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Loader2, RefreshCw, Send, Save, X } from "lucide-react";
+import { Loader2, RefreshCw, Send, Save, X, Globe, Cog, Bot } from "lucide-react";
+
+type Service = "web" | "automation" | "agent";
+
+const SERVICE_TABS: { id: Service; label: string; icon: typeof Globe; desc: string }[] = [
+  { id: "web", label: "Site web", icon: Globe, desc: "Proposer un site web" },
+  { id: "automation", label: "Automatisation IA", icon: Cog, desc: "Automatiser tâches" },
+  { id: "agent", label: "Agent IA", icon: Bot, desc: "Agent vocal / chat 24/7" },
+];
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -35,6 +43,7 @@ export function ApproachEmailModal({
 }: Props) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [service, setService] = useState<Service>("agent");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isGenerating, startGenTransition] = useTransition();
@@ -52,7 +61,7 @@ export function ApproachEmailModal({
       return;
     }
     if (subject || body) return; // déjà chargé
-    runGenerate();
+    runGenerate(service);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -62,14 +71,16 @@ export function ApproachEmailModal({
       setSubject("");
       setBody("");
       setErrorMsg(null);
+      setService("agent");
     }
   }, [open]);
 
-  const runGenerate = () => {
+  const runGenerate = (svc: Service = service) => {
     setErrorMsg(null);
+    setService(svc);
     startGenTransition(async () => {
       try {
-        const res = await generateApproachEmail(prospectId);
+        const res = await generateApproachEmail(prospectId, svc);
         if (res.ok) {
           setSubject(res.subject);
           setBody(res.body);
@@ -151,6 +162,45 @@ export function ApproachEmailModal({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Sélecteur service Klaivia à proposer */}
+        {!initialDraft && (
+          <div className="grid grid-cols-3 gap-2">
+            {SERVICE_TABS.map((tab) => {
+              const active = service === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => runGenerate(tab.id)}
+                  disabled={busy}
+                  className={`group flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all ${
+                    active
+                      ? "border-[color:var(--color-klaivia-violet)] bg-[color:var(--color-klaivia-violet-pale)] shadow-sm"
+                      : "border-border bg-card hover:border-[color:var(--color-klaivia-violet)]/40 hover:bg-muted/40"
+                  } ${busy ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon
+                      className={`size-4 ${
+                        active ? "text-[color:var(--color-klaivia-violet)]" : "text-muted-foreground"
+                      }`}
+                    />
+                    <span
+                      className={`text-sm font-semibold ${
+                        active ? "text-[color:var(--color-klaivia-violet)]" : "text-foreground"
+                      }`}
+                    >
+                      {tab.label}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">{tab.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {isGenerating && !subject && !body ? (
           <div className="flex flex-col items-center gap-3 py-12">
             <Loader2 className="size-8 animate-spin text-[color:var(--color-klaivia-violet)]" />
@@ -163,7 +213,7 @@ export function ApproachEmailModal({
               <p className="text-sm font-semibold text-destructive">Erreur génération du mail</p>
               <p className="mt-1 whitespace-pre-wrap text-xs text-foreground">{errorMsg}</p>
             </div>
-            <Button onClick={runGenerate} size="sm" variant="outline">
+            <Button onClick={() => runGenerate()} size="sm" variant="outline">
               <RefreshCw className="size-3.5" /> Réessayer
             </Button>
           </div>
@@ -198,7 +248,7 @@ export function ApproachEmailModal({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={runGenerate}
+            onClick={() => runGenerate()}
             disabled={busy}
             title="Régénérer le template"
           >

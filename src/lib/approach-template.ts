@@ -19,6 +19,9 @@ type ProspectInfo = {
   canal: string | null;
 };
 
+// Service Klaivia que tu proposes au prospect
+export type ApproachService = "web" | "automation" | "agent";
+
 type SectorPitch = {
   // Sujet : court, casual, pas vendeur
   subject: (entreprise: string) => string;
@@ -173,18 +176,55 @@ function channelLine(canal: string | null, entreprise: string): string {
 
 export type GeneratedApproachEmail = { subject: string; body: string };
 
-export function buildApproachEmail(p: ProspectInfo): GeneratedApproachEmail {
+// Subject + solution + CTA adaptés au service Klaivia proposé
+function serviceSubject(service: ApproachService, company: string): string {
+  switch (service) {
+    case "web":
+      return `Idée pour le site de ${company}`;
+    case "automation":
+      return `Tâches répétitives chez ${company} ?`;
+    case "agent":
+      return `Un agent IA pour ${company} ?`;
+  }
+}
+
+function serviceSolution(service: ApproachService, company: string): string {
+  switch (service) {
+    case "web":
+      return `On construit pour ${company} un site web rapide, mobile-first, optimisé pour la conversion. Pas un site "vitrine joli" — un site qui transforme les visiteurs en clients : prise de contact directe, formulaire qualifiant, parcours fluide.`;
+    case "automation":
+      return `On automatise les tâches répétitives de ${company} : qualification des leads entrants, relances clients, synchronisation agenda, génération de devis, suivi facturation. Le but : récupérer des heures chaque semaine sans embaucher.`;
+    case "agent":
+      return `On déploie pour ${company} un agent IA vocal et conversationnel qui répond aux appels et messages 24/7, qualifie les demandes, planifie les RDV. Comme un assistant dédié, mais qui ne dort jamais.`;
+  }
+}
+
+function serviceCTA(service: ApproachService, company: string, firstName: string | null): string {
+  const lead = firstName ? `Vous voulez que je vous montre` : `Je peux vous montrer`;
+  switch (service) {
+    case "web":
+      return `${lead} 2-3 exemples de sites Klaivia qui ont transformé le commercial de PME similaires à ${company} ? 10 minutes en visio, sans engagement.`;
+    case "automation":
+      return `${lead} concrètement quelles tâches on automatiserait pour ${company} et le gain de temps estimé ? 10 minutes suffisent.`;
+    case "agent":
+      return `${lead} en live un agent IA qui tourne déjà chez un de nos clients ? 10 minutes pour voir le truc fonctionner.`;
+  }
+}
+
+export function buildApproachEmail(
+  p: ProspectInfo,
+  service: ApproachService = "agent",
+): GeneratedApproachEmail {
   const company = p.entreprise || `${p.prenom || ""} ${p.nom || ""}`.trim() || "votre activité";
   const firstName = p.prenom && p.prenom !== "—" ? p.prenom : null;
   const cityHint = p.ville ? ` (${p.ville})` : "";
   const pitch = pickPitch(p.secteur);
 
-  const subject = pitch.subject(company);
+  const subject = serviceSubject(service, company);
   const greeting = firstName ? `Bonjour ${firstName},` : "Bonjour,";
   const intro = channelLine(p.canal, `${company}${cityHint}`);
-  const cta = firstName
-    ? `Vous voulez que je vous montre concrètement ce que ça donnerait pour ${company} ? 10 minutes suffisent.`
-    : `Je peux vous montrer concrètement ce que ça donnerait — 10 minutes en visio, sans engagement.`;
+  const cta = serviceCTA(service, company, firstName);
+  const solution = serviceSolution(service, company);
 
   // Format scannable : 3-4 paragraphes courts.
   // La signature texte ci-dessous est visible dans la modal (le user sait ce qui sera envoyé).
@@ -196,7 +236,7 @@ ${intro} ${pitch.hook}
 
 ${pitch.cost}
 
-${pitch.solution}
+${solution}
 
 ${cta}
 

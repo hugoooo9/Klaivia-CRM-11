@@ -5,14 +5,21 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mailer";
-import { buildApproachEmail, type GeneratedApproachEmail } from "@/lib/approach-template";
+import {
+  buildApproachEmail,
+  type GeneratedApproachEmail,
+  type ApproachService,
+} from "@/lib/approach-template";
 
 export type GenerateResult =
   | { ok: true; subject: string; body: string }
   | { ok: false; error: string };
 
 // 1. Génère un mail d'approche pré-rempli avec les infos du prospect (sans IA)
-export async function generateApproachEmail(prospectId: string): Promise<GenerateResult> {
+export async function generateApproachEmail(
+  prospectId: string,
+  service: ApproachService = "agent",
+): Promise<GenerateResult> {
   try {
     if (!prospectId) return { ok: false, error: "prospectId requis" };
 
@@ -29,14 +36,17 @@ export async function generateApproachEmail(prospectId: string): Promise<Generat
     });
     if (!prospect) return { ok: false, error: "Prospect introuvable" };
 
-    const result: GeneratedApproachEmail = buildApproachEmail({
-      entreprise: prospect.entreprise,
-      prenom: prospect.prenom === "—" ? null : prospect.prenom,
-      nom: prospect.nom === "—" ? null : prospect.nom,
-      ville: prospect.ville,
-      secteur: prospect.secteur || null,
-      canal: prospect.canal || null,
-    });
+    const result: GeneratedApproachEmail = buildApproachEmail(
+      {
+        entreprise: prospect.entreprise,
+        prenom: prospect.prenom === "—" ? null : prospect.prenom,
+        nom: prospect.nom === "—" ? null : prospect.nom,
+        ville: prospect.ville,
+        secteur: prospect.secteur || null,
+        canal: prospect.canal || null,
+      },
+      service,
+    );
     return { ok: true, subject: result.subject, body: result.body };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
