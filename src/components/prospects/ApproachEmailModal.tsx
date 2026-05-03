@@ -265,7 +265,7 @@ export function ApproachEmailModal({
   return (
     <>
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-card">
+      <DialogContent className="max-h-[92vh] w-[95vw] !max-w-[860px] overflow-y-auto bg-card p-6 sm:!max-w-[860px]">
         <DialogHeader>
           <DialogTitle>Mail d&apos;approche</DialogTitle>
           <DialogDescription className="text-xs">
@@ -279,7 +279,7 @@ export function ApproachEmailModal({
 
         {/* Sélecteur service Klaivia à proposer */}
         {!initialDraft && (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             {SERVICE_TABS.map((tab) => {
               const active = service === tab.id;
               const Icon = tab.icon;
@@ -289,27 +289,31 @@ export function ApproachEmailModal({
                   type="button"
                   onClick={() => runGenerate(tab.id)}
                   disabled={busy}
-                  className={`group flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all ${
+                  className={`group flex items-center gap-3 rounded-xl border p-3.5 text-left transition-all ${
                     active
-                      ? "border-[color:var(--color-klaivia-violet)] bg-[color:var(--color-klaivia-violet-pale)] shadow-sm"
+                      ? "border-[color:var(--color-klaivia-violet)] bg-[color:var(--color-klaivia-violet-pale)] shadow-sm ring-1 ring-[color:var(--color-klaivia-violet)]"
                       : "border-border bg-card hover:border-[color:var(--color-klaivia-violet)]/40 hover:bg-muted/40"
                   } ${busy ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Icon
-                      className={`size-4 ${
-                        active ? "text-[color:var(--color-klaivia-violet)]" : "text-muted-foreground"
-                      }`}
-                    />
-                    <span
-                      className={`text-sm font-semibold ${
+                  <div
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
+                      active
+                        ? "bg-[color:var(--color-klaivia-violet)] text-white"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="size-[18px]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className={`truncate text-sm font-semibold ${
                         active ? "text-[color:var(--color-klaivia-violet)]" : "text-foreground"
                       }`}
                     >
                       {tab.label}
-                    </span>
+                    </div>
+                    <div className="truncate text-[11px] text-muted-foreground">{tab.desc}</div>
                   </div>
-                  <span className="text-[11px] text-muted-foreground">{tab.desc}</span>
                 </button>
               );
             })}
@@ -348,11 +352,11 @@ export function ApproachEmailModal({
               <Label htmlFor="email-body">Corps du mail</Label>
               <Textarea
                 id="email-body"
-                rows={14}
+                rows={18}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 disabled={busy}
-                className="mt-1 font-mono text-sm leading-relaxed"
+                className="mt-1 text-[15px] leading-[1.6]"
               />
             </div>
           </div>
@@ -464,7 +468,7 @@ export function ApproachEmailModal({
 
     {/* Dialog édition template */}
     <Dialog open={templateEditOpen} onOpenChange={(v) => !isSaving && setTemplateEditOpen(v)}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-card">
+      <DialogContent className="max-h-[92vh] w-[95vw] !max-w-[860px] overflow-y-auto bg-card p-6 sm:!max-w-[860px]">
         <DialogHeader>
           <DialogTitle>
             Modifier le template — {SERVICE_TABS.find((t) => t.id === service)?.label}
