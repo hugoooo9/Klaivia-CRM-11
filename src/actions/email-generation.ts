@@ -163,7 +163,61 @@ export async function sendApproachEmailV2(input: {
   }
 }
 
-// 4. Supprime un mail (brouillon ou archive)
+// 4. Programme un mail pour envoi automatique à une date/heure donnée
+export async function scheduleApproachEmail(input: {
+  prospectId: string;
+  subject: string;
+  body: string;
+  scheduledAt: string; // ISO datetime
+}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  try {
+    const subject = input.subject.trim();
+    const body = input.body.trim();
+    if (!subject || !body) return { ok: false, error: "Objet et corps requis" };
+
+    const when = new Date(input.scheduledAt);
+    if (Number.isNaN(when.getTime())) return { ok: false, error: "Date invalide" };
+    if (when.getTime() <= Date.now()) {
+      return { ok: false, error: "Date doit être dans le futur" };
+    }
+
+    const prospect = await db.prospect.findUnique({
+      where: { id: input.prospectId },
+      select: { id: true, email: true },
+    });
+    if (!prospect) return { ok: false, error: "Prospect introuvable" };
+    if (!prospect.email) {
+      return { ok: false, error: "Ce prospect n'a pas d'adresse email" };
+    }
+
+    const scheduled = await db.prospectEmail.create({
+      data: {
+        prospectId: input.prospectId,
+        subject,
+        body,
+        status: "scheduled",
+        scheduledAt: when,
+      },
+    });
+
+    await db.activity.create({
+      data: {
+        prospectId: input.prospectId,
+        type: "EMAIL_SCHEDULED",
+        description: `Mail programmé pour ${when.toLocaleString("fr-CH")} : ${subject}`,
+      },
+    });
+
+    revalidatePath(`/prospects/${input.prospectId}`);
+    return { ok: true, id: scheduled.id };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[scheduleApproachEmail] échec:", msg);
+    return { ok: false, error: msg };
+  }
+}
+
+// 5. Supprime un mail (brouillon, programmé ou archive)
 export async function deleteProspectEmail(id: string, prospectId: string): Promise<{ ok: true }> {
   await db.prospectEmail.delete({ where: { id } });
   revalidatePath(`/prospects/${prospectId}`);

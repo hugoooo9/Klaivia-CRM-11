@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Loader2, RefreshCw, Send, Save, X, Globe, Cog, Bot } from "lucide-react";
+import { Loader2, RefreshCw, Send, Save, X, Globe, Cog, Bot, Clock } from "lucide-react";
 
 type Service = "web" | "automation" | "agent";
 
@@ -23,6 +23,7 @@ import {
   generateApproachEmail,
   saveDraftEmail,
   sendApproachEmailV2,
+  scheduleApproachEmail,
 } from "@/actions/email-generation";
 
 type Props = {
@@ -46,11 +47,14 @@ export function ApproachEmailModal({
   const [service, setService] = useState<Service>("agent");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState<string>("");
   const [isGenerating, startGenTransition] = useTransition();
   const [isSending, startSendTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
+  const [isScheduling, startScheduleTransition] = useTransition();
 
-  const busy = isGenerating || isSending || isSaving;
+  const busy = isGenerating || isSending || isSaving || isScheduling;
 
   // À l'ouverture : si initialDraft → l'utiliser, sinon générer auto
   useEffect(() => {
@@ -126,6 +130,52 @@ export function ApproachEmailModal({
       return;
     }
     setConfirmOpen(true);
+  };
+
+  const askSchedule = () => {
+    if (!subject.trim() || !body.trim()) {
+      toast.error("Objet et corps requis");
+      return;
+    }
+    if (!prospectEmail) {
+      toast.error("Ce prospect n'a pas d'adresse email");
+      return;
+    }
+    // Pré-remplit avec demain 9h00 par défaut
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    const localIso = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+    setScheduleAt(localIso);
+    setScheduleOpen(true);
+  };
+
+  const onConfirmSchedule = () => {
+    if (!scheduleAt) {
+      toast.error("Choisis une date");
+      return;
+    }
+    startScheduleTransition(async () => {
+      try {
+        const res = await scheduleApproachEmail({
+          prospectId,
+          subject,
+          body,
+          scheduledAt: new Date(scheduleAt).toISOString(),
+        });
+        if (res.ok) {
+          toast.success(`Mail programmé pour ${new Date(scheduleAt).toLocaleString("fr-CH")}`);
+          setScheduleOpen(false);
+          onOpenChange(false);
+        } else {
+          toast.error(res.error);
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Erreur programmation");
+      }
+    });
   };
 
   const onConfirmSend = () => {
@@ -275,6 +325,17 @@ export function ApproachEmailModal({
             </Button>
             <Button
               type="button"
+              variant="outline"
+              size="sm"
+              onClick={askSchedule}
+              disabled={busy || !subject.trim() || !body.trim() || !prospectEmail}
+              title="Programmer l'envoi à une date/heure"
+            >
+              <Clock className="size-3.5" />
+              Programmer
+            </Button>
+            <Button
+              type="button"
               size="sm"
               onClick={askConfirmSend}
               disabled={busy || !subject.trim() || !body.trim() || !prospectEmail}
@@ -318,6 +379,52 @@ export function ApproachEmailModal({
           >
             {isSending ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
             Confirmer & envoyer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Dialog programmation envoi */}
+    <Dialog open={scheduleOpen} onOpenChange={(v) => !isScheduling && setScheduleOpen(v)}>
+      <DialogContent className="max-w-md bg-card">
+        <DialogHeader>
+          <DialogTitle>Programmer l&apos;envoi</DialogTitle>
+          <DialogDescription className="text-xs">
+            Le mail sera envoyé automatiquement à la date/heure choisie.
+            Destinataire : <span className="font-mono font-semibold text-foreground">{prospectEmail}</span>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="scheduled-at">Date et heure d&apos;envoi</Label>
+            <Input
+              id="scheduled-at"
+              type="datetime-local"
+              value={scheduleAt}
+              onChange={(e) => setScheduleAt(e.target.value)}
+              min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 16)}
+              className="mt-1"
+              disabled={isScheduling}
+            />
+          </div>
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-900">
+            ⓘ L&apos;envoi se déclenche via un cron qui tourne toutes les 5 minutes.
+            Précision réelle : ±5 min autour de l&apos;heure choisie.
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setScheduleOpen(false)} disabled={isScheduling}>
+            Retour
+          </Button>
+          <Button
+            onClick={onConfirmSchedule}
+            disabled={isScheduling || !scheduleAt}
+            className="klaivia-btn-primary font-semibold"
+          >
+            {isScheduling ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
+            Programmer
           </Button>
         </DialogFooter>
       </DialogContent>

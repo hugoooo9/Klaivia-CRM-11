@@ -145,20 +145,23 @@ model Attachment {
   @@index([prospectId])
 }
 
-// Mail d'approche IA — généré par Gemini, stocké comme brouillon ou envoyé
+// Mail d'approche — stocké comme brouillon, programmé ou envoyé
 model ProspectEmail {
-  id         String    @id @default(cuid())
-  prospect   Prospect  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  prospectId String
-  subject    String
-  body       String
-  status     String    // "draft" | "sent"
-  sentAt     DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  prospect    Prospect  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospectId  String
+  subject     String
+  body        String
+  status      String    // "draft" | "scheduled" | "sent" | "failed"
+  scheduledAt DateTime? // si status="scheduled" → date d'envoi prévue
+  sentAt      DateTime? // si status="sent" → date envoi réelle
+  errorMsg    String?   // si status="failed" → message d'erreur
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([prospectId])
   @@index([status])
+  @@index([scheduledAt])
 }
 
 // Templates email/LinkedIn réutilisables

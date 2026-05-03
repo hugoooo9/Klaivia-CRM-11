@@ -4,7 +4,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/cron", // routes cron (protégées par CRON_SECRET côté handler)
+];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

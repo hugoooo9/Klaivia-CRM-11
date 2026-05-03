@@ -38,10 +38,9 @@ async function runMigrations() {
       console.warn("[instrumentation] WAL checkpoint failed:", (e as Error).message);
     }
 
-    // Fast path : si toutes les tables critiques existent déjà, on saute la migration.
-    // Évite tout lock SQLite sur les boots concurrents (Hostinger spawne plusieurs procs).
-    // ⚠ Quand on ajoute un nouveau model Prisma, AJOUTER son nom à cette liste —
-    // sinon la migration correspondante ne tournera jamais sur les DB existantes.
+    // Fast path : si toutes les tables critiques existent ET toutes les migrations
+    // sont trackées dans _klaivia_migrations, on saute. Sinon on exécute uniquement les
+    // migrations non trackées (utile pour les ALTER TABLE ADD COLUMN).
     const criticalTables = [
       "Prospect", "Task", "Tag", "Activity", "Template", "ProspectEmail", "Attachment",
     ];
@@ -51,15 +50,7 @@ async function runMigrations() {
       ...criticalTables,
     )) as { name: string }[];
 
-    if (existing.length === criticalTables.length) {
-      console.log("[instrumentation] toutes les tables critiques OK, skip migration");
-      return;
-    }
-    console.log(
-      `[instrumentation] tables manquantes (${criticalTables.length - existing.length}/${criticalTables.length}), exécute migration`,
-    );
-
-    // 1. Crée la table de tracking si absente
+    // Crée table tracking dès maintenant (idempotent) pour pouvoir lire l'état
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS _klaivia_migrations (
         name TEXT PRIMARY KEY,
@@ -67,13 +58,36 @@ async function runMigrations() {
       )
     `);
 
-    // 2. Liste les migrations déjà appliquées
-    const appliedRows = (await prisma.$queryRawUnsafe(
+    // Liste tous les dossiers de migration sur disque
+    const migrationsDir = path.join(process.cwd(), "prisma", "migrations");
+    const allDirs = fs.existsSync(migrationsDir)
+      ? fs
+          .readdirSync(migrationsDir, { withFileTypes: true })
+          .filter((d) => d.isDirectory())
+          .map((d) => d.name)
+          .sort()
+      : [];
+
+    const trackedRows = (await prisma.$queryRawUnsafe(
       `SELECT name FROM _klaivia_migrations`,
     )) as { name: string }[];
-    const applied = new Set(appliedRows.map((r) => r.name));
+    const tracked = new Set(trackedRows.map((r) => r.name));
+    const allTablesExist = existing.length === criticalTables.length;
+    const allMigrationsTracked = allDirs.every((d) => tracked.has(d));
 
-    // 3. Nettoie tables orphelines (new_*) laissées par un boot crashé
+    if (allTablesExist && allMigrationsTracked) {
+      console.log("[instrumentation] tables OK + toutes migrations trackées, skip");
+      return;
+    }
+    console.log(
+      `[instrumentation] migration nécessaire — tables: ${existing.length}/${criticalTables.length}, migrations trackées: ${tracked.size}/${allDirs.length}`,
+    );
+
+    // Réutilise les variables déjà initialisées plus haut
+    const applied = tracked;
+    const dirs = allDirs;
+
+    // Nettoie tables orphelines (new_*) laissées par un boot crashé
     const orphans = (await prisma.$queryRawUnsafe(
       `SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'new_%'`,
     )) as { name: string }[];
@@ -82,21 +96,8 @@ async function runMigrations() {
       console.log(`[instrumentation] cleaned orphan table ${o.name}`);
     }
 
-    // 4. Liste et trie les dossiers de migration (ordre chronologique par nom)
-    const migrationsDir = path.join(process.cwd(), "prisma", "migrations");
-    if (!fs.existsSync(migrationsDir)) {
-      console.error("[instrumentation] prisma/migrations introuvable:", migrationsDir);
-      return;
-    }
-
-    const dirs = fs
-      .readdirSync(migrationsDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name)
-      .sort();
-
-    // 5. Détecte si la base est déjà initialisée par un boot précédent (avant tracking)
-    // Si Prospect existe mais qu'on a aucune migration trackée → marque les anciennes comme appliquées
+    // Détecte si la base est déjà initialisée par un boot précédent (avant tracking).
+    // Si Prospect existe mais aucune migration trackée → marque les anciennes comme appliquées
     const hasProspect = (await prisma.$queryRawUnsafe(
       `SELECT name FROM sqlite_master WHERE type='table' AND name='Prospect'`,
     )) as { name: string }[];

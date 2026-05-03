@@ -2,7 +2,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Mail, MailOpen, ChevronDown, ChevronUp, Trash2, FileEdit } from "lucide-react";
+import {
+  Mail, MailOpen, ChevronDown, ChevronUp, Trash2, FileEdit, Clock, AlertTriangle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ApproachEmailModal } from "./ApproachEmailModal";
 import { deleteProspectEmail } from "@/actions/email-generation";
@@ -12,8 +14,10 @@ type EmailItem = {
   id: string;
   subject: string;
   body: string;
-  status: string; // "draft" | "sent"
+  status: string; // "draft" | "scheduled" | "sent" | "failed"
   sentAt: Date | null;
+  scheduledAt?: Date | null;
+  errorMsg?: string | null;
   createdAt: Date;
 };
 
@@ -66,7 +70,18 @@ export function EmailHistory({
           <ul className="space-y-2">
             {emails.map((m) => {
               const isDraft = m.status === "draft";
+              const isScheduled = m.status === "scheduled";
+              const isFailed = m.status === "failed";
               const isOpen = expanded.has(m.id);
+              const badgeCfg = isDraft
+                ? { cls: "border-slate-200 bg-slate-50 text-slate-700", Icon: FileEdit, label: "Brouillon" }
+                : isScheduled
+                  ? { cls: "border-amber-200 bg-amber-50 text-amber-700", Icon: Clock, label: "Programmé" }
+                  : isFailed
+                    ? { cls: "border-rose-200 bg-rose-50 text-rose-700", Icon: AlertTriangle, label: "Échec" }
+                    : { cls: "border-emerald-200 bg-emerald-50 text-emerald-700", Icon: MailOpen, label: "Envoyé" };
+              const BadgeIcon = badgeCfg.Icon;
+              const dateRef = m.sentAt ?? m.scheduledAt ?? m.createdAt;
               return (
                 <li
                   key={m.id}
@@ -78,22 +93,19 @@ export function EmailHistory({
                       onClick={() => toggle(m.id)}
                       className="flex flex-1 items-center gap-3 text-left"
                     >
-                      <span
-                        className={`klaivia-badge shrink-0 ${
-                          isDraft
-                            ? "border-slate-200 bg-slate-50 text-slate-700"
-                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        }`}
-                      >
-                        {isDraft ? <FileEdit className="size-3" /> : <MailOpen className="size-3" />}
-                        {isDraft ? "Brouillon" : "Envoyé"}
+                      <span className={`klaivia-badge shrink-0 ${badgeCfg.cls}`}>
+                        <BadgeIcon className="size-3" />
+                        {badgeCfg.label}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-semibold text-foreground">
                           {m.subject}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
-                          {fmtRelative(m.sentAt ?? m.createdAt)}
+                          {isScheduled && m.scheduledAt
+                            ? `Envoi prévu le ${m.scheduledAt.toLocaleString("fr-CH", { dateStyle: "short", timeStyle: "short" })}`
+                            : fmtRelative(dateRef)}
+                          {isFailed && m.errorMsg && ` · ${m.errorMsg.slice(0, 60)}`}
                         </div>
                       </div>
                       {isOpen ? (
