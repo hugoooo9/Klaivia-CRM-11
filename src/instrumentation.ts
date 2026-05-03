@@ -43,6 +43,7 @@ async function runMigrations() {
     // migrations non trackées (utile pour les ALTER TABLE ADD COLUMN).
     const criticalTables = [
       "Prospect", "Task", "Tag", "Activity", "Template", "ProspectEmail", "Attachment",
+      "ApproachTemplate",
     ];
     const placeholders = criticalTables.map(() => "?").join(",");
     const existing = (await prisma.$queryRawUnsafe(

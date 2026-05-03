@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mailer";
 import {
   buildApproachEmail,
+  getDefaultTemplate,
+  substituteVars,
   type GeneratedApproachEmail,
   type ApproachService,
 } from "@/lib/approach-template";
@@ -36,12 +38,27 @@ export async function generateApproachEmail(
     });
     if (!prospect) return { ok: false, error: "Prospect introuvable" };
 
+    const vars = {
+      entreprise: prospect.entreprise,
+      prenom: prospect.prenom === "—" ? null : prospect.prenom,
+      nom: prospect.nom === "—" ? null : prospect.nom,
+      ville: prospect.ville,
+    };
+
+    // Si l'utilisateur a sauvegardé un template personnalisé pour ce service → l'utilise
+    const custom = await db.approachTemplate.findUnique({ where: { service } });
+    if (custom) {
+      return {
+        ok: true,
+        subject: substituteVars(custom.subjectTemplate, vars),
+        body: substituteVars(custom.bodyTemplate, vars),
+      };
+    }
+
+    // Sinon : template hardcodé avec sector hooks
     const result: GeneratedApproachEmail = buildApproachEmail(
       {
-        entreprise: prospect.entreprise,
-        prenom: prospect.prenom === "—" ? null : prospect.prenom,
-        nom: prospect.nom === "—" ? null : prospect.nom,
-        ville: prospect.ville,
+        ...vars,
         secteur: prospect.secteur || null,
         canal: prospect.canal || null,
       },
@@ -217,7 +234,60 @@ export async function scheduleApproachEmail(input: {
   }
 }
 
-// 5. Supprime un mail (brouillon, programmé ou archive)
+// 5. Récupère le template d'approche custom (ou défaut hardcodé) pour édition
+export async function getApproachTemplate(
+  service: ApproachService,
+): Promise<{ subjectTemplate: string; bodyTemplate: string; isCustom: boolean }> {
+  const custom = await db.approachTemplate.findUnique({ where: { service } });
+  if (custom) {
+    return {
+      subjectTemplate: custom.subjectTemplate,
+      bodyTemplate: custom.bodyTemplate,
+      isCustom: true,
+    };
+  }
+  const def = getDefaultTemplate(service);
+  return { ...def, isCustom: false };
+}
+
+// 6. Sauvegarde un template personnalisé (upsert) — utilisé par toutes les futures générations
+export async function saveApproachTemplate(input: {
+  service: ApproachService;
+  subjectTemplate: string;
+  bodyTemplate: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const subject = input.subjectTemplate.trim();
+    const body = input.bodyTemplate.trim();
+    if (!subject || !body) return { ok: false, error: "Objet et corps requis" };
+    await db.approachTemplate.upsert({
+      where: { service: input.service },
+      create: { service: input.service, subjectTemplate: subject, bodyTemplate: body },
+      update: { subjectTemplate: subject, bodyTemplate: body },
+    });
+    revalidatePath("/templates");
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[saveApproachTemplate] échec:", msg);
+    return { ok: false, error: msg };
+  }
+}
+
+// 7. Reset → supprime le template custom, retour au hardcodé
+export async function resetApproachTemplate(
+  service: ApproachService,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await db.approachTemplate.deleteMany({ where: { service } });
+    revalidatePath("/templates");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+// 8. Supprime un mail (brouillon, programmé ou archive)
 export async function deleteProspectEmail(id: string, prospectId: string): Promise<{ ok: true }> {
   await db.prospectEmail.delete({ where: { id } });
   revalidatePath(`/prospects/${prospectId}`);

@@ -130,6 +130,19 @@ model Activity {
   @@index([createdAt])
 }
 
+// Templates personnalisés des mails d'approche par service Klaivia.
+// Si une entrée existe pour un service, elle remplace le template hardcodé.
+// Variables disponibles dans subjectTemplate / bodyTemplate :
+// {entreprise} {prenom} {nom} {ville}
+model ApproachTemplate {
+  id              String   @id @default(cuid())
+  service         String   @unique // "web" | "automation" | "agent"
+  subjectTemplate String
+  bodyTemplate    String
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+}
+
 // Pièces jointes (devis, contrats, propositions) attachées à un prospect.
 // Stocké en base64 dans une colonne TEXT pour compat Prisma + SQLite Hostinger.
 model Attachment {

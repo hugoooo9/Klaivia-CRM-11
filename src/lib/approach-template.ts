@@ -166,6 +166,47 @@ function pickServicePitch(service: ApproachService, secteur: string | null): Ser
 
 export type GeneratedApproachEmail = { subject: string; body: string };
 
+// Substitue les placeholders {entreprise} / {prenom} / {nom} / {ville} dans un template
+export function substituteVars(
+  text: string,
+  vars: { entreprise?: string | null; prenom?: string | null; nom?: string | null; ville?: string | null },
+): string {
+  return text
+    .replace(/\{entreprise\}/g, vars.entreprise || "votre activité")
+    .replace(/\{prenom\}/g, vars.prenom || "")
+    .replace(/\{nom\}/g, vars.nom || "")
+    .replace(/\{ville\}/g, vars.ville || "");
+}
+
+// Helper : retourne le template hardcodé sous forme {subjectTemplate, bodyTemplate}
+// avec placeholders, pour permettre à l'utilisateur de partir d'un template propre
+// quand il édite la version personnalisée.
+export function getDefaultTemplate(service: ApproachService): {
+  subjectTemplate: string;
+  bodyTemplate: string;
+} {
+  const pitch = SERVICE_PITCHES[service];
+  const subjectTemplate = pitch.subject("{entreprise}");
+  const bodyTemplate = `Bonjour {prenom},
+
+${pitch.hook}
+
+${pitch.agitation}
+
+${pitch.solution}
+
+${pitch.result}
+
+${pitch.cta}
+
+Hugo
+—
+Klaivia · Agence IA & Sites Web
+Sites web · Automatisations · Agents IA pour PME romandes
+klaivia.ch · @klaivia.agency · contact@klaivia.ch`;
+  return { subjectTemplate, bodyTemplate };
+}
+
 export function buildApproachEmail(
   p: ProspectInfo,
   service: ApproachService = "agent",

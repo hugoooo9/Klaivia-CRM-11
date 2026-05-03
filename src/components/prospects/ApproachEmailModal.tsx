@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Loader2, RefreshCw, Send, Save, X, Globe, Cog, Bot, Clock } from "lucide-react";
+import { Loader2, RefreshCw, Send, Save, X, Globe, Cog, Bot, Clock, Settings } from "lucide-react";
 
 type Service = "web" | "automation" | "agent";
 
@@ -24,6 +24,9 @@ import {
   saveDraftEmail,
   sendApproachEmailV2,
   scheduleApproachEmail,
+  getApproachTemplate,
+  saveApproachTemplate,
+  resetApproachTemplate,
 } from "@/actions/email-generation";
 
 type Props = {
@@ -49,6 +52,10 @@ export function ApproachEmailModal({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleAt, setScheduleAt] = useState<string>("");
+  const [templateEditOpen, setTemplateEditOpen] = useState(false);
+  const [templateSubject, setTemplateSubject] = useState("");
+  const [templateBody, setTemplateBody] = useState("");
+  const [templateIsCustom, setTemplateIsCustom] = useState(false);
   const [isGenerating, startGenTransition] = useTransition();
   const [isSending, startSendTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
@@ -111,6 +118,64 @@ export function ApproachEmailModal({
         if (res.ok) {
           toast.success("Brouillon enregistré");
           onOpenChange(false);
+        } else {
+          toast.error(res.error);
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Erreur");
+      }
+    });
+  };
+
+  const openTemplateEdit = async () => {
+    try {
+      const tpl = await getApproachTemplate(service);
+      setTemplateSubject(tpl.subjectTemplate);
+      setTemplateBody(tpl.bodyTemplate);
+      setTemplateIsCustom(tpl.isCustom);
+      setTemplateEditOpen(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Impossible de charger le template");
+    }
+  };
+
+  const onSaveTemplate = () => {
+    if (!templateSubject.trim() || !templateBody.trim()) {
+      toast.error("Objet et corps requis");
+      return;
+    }
+    startSaveTransition(async () => {
+      try {
+        const res = await saveApproachTemplate({
+          service,
+          subjectTemplate: templateSubject,
+          bodyTemplate: templateBody,
+        });
+        if (res.ok) {
+          toast.success("Template enregistré");
+          setTemplateEditOpen(false);
+          setTemplateIsCustom(true);
+          // Re-genère mail avec nouveau template
+          runGenerate(service);
+        } else {
+          toast.error(res.error);
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Erreur sauvegarde");
+      }
+    });
+  };
+
+  const onResetTemplate = () => {
+    if (!confirm("Restaurer le template par défaut ? Tes modifications seront perdues.")) return;
+    startSaveTransition(async () => {
+      try {
+        const res = await resetApproachTemplate(service);
+        if (res.ok) {
+          toast.success("Template par défaut restauré");
+          setTemplateEditOpen(false);
+          setTemplateIsCustom(false);
+          runGenerate(service);
         } else {
           toast.error(res.error);
         }
@@ -294,21 +359,34 @@ export function ApproachEmailModal({
         )}
 
         <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => runGenerate()}
-            disabled={busy}
-            title="Régénérer le template"
-          >
-            {isGenerating ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="size-3.5" />
-            )}
-            Régénérer
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => runGenerate()}
+              disabled={busy}
+              title="Régénérer le template"
+            >
+              {isGenerating ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="size-3.5" />
+              )}
+              Régénérer
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={openTemplateEdit}
+              disabled={busy}
+              title="Modifier et enregistrer le template"
+            >
+              <Settings className="size-3.5" />
+              Modifier template
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
               <X className="size-3.5" /> Annuler
@@ -380,6 +458,81 @@ export function ApproachEmailModal({
             {isSending ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
             Confirmer & envoyer
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Dialog édition template */}
+    <Dialog open={templateEditOpen} onOpenChange={(v) => !isSaving && setTemplateEditOpen(v)}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-card">
+        <DialogHeader>
+          <DialogTitle>
+            Modifier le template — {SERVICE_TABS.find((t) => t.id === service)?.label}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            {templateIsCustom ? (
+              <span className="font-semibold text-[color:var(--color-klaivia-violet)]">
+                Template personnalisé actif
+              </span>
+            ) : (
+              <span>Template par défaut</span>
+            )}
+            {" — "}
+            Variables : <code className="rounded bg-muted px-1 py-0.5">{`{entreprise}`}</code>{" "}
+            <code className="rounded bg-muted px-1 py-0.5">{`{prenom}`}</code>{" "}
+            <code className="rounded bg-muted px-1 py-0.5">{`{nom}`}</code>{" "}
+            <code className="rounded bg-muted px-1 py-0.5">{`{ville}`}</code>
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="tpl-subject">Objet</Label>
+            <Input
+              id="tpl-subject"
+              value={templateSubject}
+              onChange={(e) => setTemplateSubject(e.target.value)}
+              disabled={isSaving}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="tpl-body">Corps</Label>
+            <Textarea
+              id="tpl-body"
+              rows={16}
+              value={templateBody}
+              onChange={(e) => setTemplateBody(e.target.value)}
+              disabled={isSaving}
+              className="mt-1 font-mono text-sm leading-relaxed"
+            />
+          </div>
+        </div>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+          {templateIsCustom && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onResetTemplate}
+              disabled={isSaving}
+              className="text-destructive hover:bg-destructive/10"
+            >
+              Restaurer défaut
+            </Button>
+          )}
+          <div className="ml-auto flex gap-2">
+            <Button variant="outline" onClick={() => setTemplateEditOpen(false)} disabled={isSaving}>
+              Annuler
+            </Button>
+            <Button
+              onClick={onSaveTemplate}
+              disabled={isSaving || !templateSubject.trim() || !templateBody.trim()}
+              className="klaivia-btn-primary font-semibold"
+            >
+              {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+              Enregistrer template
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
